@@ -2,7 +2,10 @@ from flask import Blueprint
 from init import db, bcrypt
 from models.user import User
 from models.account import Account
+from models.operation import Operation
+from models.exchange import Exchange
 from datetime import datetime
+from sqlalchemy import text
 
 db_commands = Blueprint("db", __name__)
 
@@ -13,8 +16,13 @@ def create_tables():
 
 @db_commands.cli.command("drop")
 def drop_tables():
-    db.drop_all()
-    print("Tables droppped!")
+        # Connect to the database
+        with db.engine.connect() as conn:
+            # Execute raw SQL to drop tables
+            conn.execute(text("DROP TABLE IF EXISTS exchanges CASCADE;"))
+            conn.execute(text("DROP TABLE IF EXISTS accounts CASCADE;"))
+        db.drop_all()
+        print("Tables droppped!")
 
 @db_commands.cli.command("seed")
 def seed_database():
@@ -71,6 +79,7 @@ def seed_database():
             user = users[2]
         )
     ]
+
 
     db.session.add_all(users)
     print("Users added succesfully")

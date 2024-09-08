@@ -6,6 +6,7 @@ from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
 
 
+
 def create_app():
     app = Flask(__name__)
     app.json.sort_keys = False
@@ -16,6 +17,8 @@ def create_app():
     ma.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+
+
 
     @app.errorhandler(ValidationError)
     def validation_error(err):
