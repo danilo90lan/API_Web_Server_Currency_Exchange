@@ -4,10 +4,22 @@ from models.user import User
 from models.account import Account
 from models.operation import Operation
 from models.exchange import Exchange
+from models.currency import Currency
 from datetime import datetime
 from sqlalchemy import text
+import requests
+
 
 db_commands = Blueprint("db", __name__)
+
+def get_currencies():
+    endpoint = "https://v6.exchangerate-api.com/v6/b12835ecd29b6518d756378d/latest/USD"
+    response = requests.get(endpoint)
+    if response.ok:
+        return response.json()
+    else:
+        return "The request  failed", response.status_code
+
 
 @db_commands.cli.command("create")
 def create_tables():
@@ -80,7 +92,33 @@ def seed_database():
         )
     ]
 
+    currency = get_currencies()
+    list_currency = []
+    updated_date = currency["time_last_update_utc"]
+    print("Raw date string:", updated_date)  # Debug: print the raw date string
+    
+    try:
+        # Convert the string to a datetime object
+        last_update_dt = datetime.strptime(updated_date, "%a, %d %b %Y %H:%M:%S %z")
+    except ValueError as e:
+        print("Error parsing date:", e)  # Debug: print any parsing errors
 
+    # Format the datetime object to get just the date
+    last_update_date = last_update_dt.strftime("%Y-%m-%d")
+    print("Formatted date:", last_update_date)  # Debug: print the formatted date
+
+    for i in currency["conversion_rates"].items():
+        value = Currency(
+            currency = i[0],
+            rate = i[1],
+            base_code = currency["base_code"],
+            last_update = last_update_date
+        )
+        list_currency.append(value)
+        
+
+    db.session.add_all(list_currency)
+    print("Currencies added succesfully!")
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)
