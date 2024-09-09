@@ -20,6 +20,31 @@ def get_currencies():
     else:
         return "The request  failed", response.status_code
 
+def update_currency():
+    list_currency = []
+    currency = get_currencies()
+    updated_date = currency["time_last_update_utc"]  
+    try:
+        # Convert the string to a datetime object
+        last_update_dt = datetime.strptime(updated_date, "%a, %d %b %Y %H:%M:%S %z")
+    except ValueError as e:
+        print("Error parsing date:", e)  # Debug: print any parsing errors
+
+    # Format the datetime object to get just the date
+    last_update_date = last_update_dt.strftime("%Y-%m-%d")
+
+    for i in currency["conversion_rates"].items():
+        value = Currency(
+            currency = i[0],
+            rate = i[1],
+            base_code = currency["base_code"],
+            last_update = last_update_date
+        )
+        list_currency.append(value)
+        
+    db.session.add_all(list_currency)
+    print("Currencies added succesfully!")
+   
 
 @db_commands.cli.command("create")
 def create_tables():
@@ -66,59 +91,30 @@ def seed_database():
             currency = "AUD",
             balance = 1000,
             date_creation = datetime.now(),
-            last_update = datetime.now(),
             user = users[0]
         ),
             Account(
             currency = "EUR",
             balance = 3500.76,
             date_creation = datetime.now(),
-            last_update = datetime.now(),
             user = users[0]
         ),
             Account(
             currency = "USD",
             balance = 597,
             date_creation = datetime.now(),
-            last_update = datetime.now(),
             user = users[1]
         ),
             Account(
             currency = "USD",
             balance = 300,
             date_creation = datetime.now(),
-            last_update = datetime.now(),
             user = users[2]
         )
     ]
 
-    currency = get_currencies()
-    list_currency = []
-    updated_date = currency["time_last_update_utc"]
-    print("Raw date string:", updated_date)  # Debug: print the raw date string
-    
-    try:
-        # Convert the string to a datetime object
-        last_update_dt = datetime.strptime(updated_date, "%a, %d %b %Y %H:%M:%S %z")
-    except ValueError as e:
-        print("Error parsing date:", e)  # Debug: print any parsing errors
+    update_currency()
 
-    # Format the datetime object to get just the date
-    last_update_date = last_update_dt.strftime("%Y-%m-%d")
-    print("Formatted date:", last_update_date)  # Debug: print the formatted date
-
-    for i in currency["conversion_rates"].items():
-        value = Currency(
-            currency = i[0],
-            rate = i[1],
-            base_code = currency["base_code"],
-            last_update = last_update_date
-        )
-        list_currency.append(value)
-        
-
-    db.session.add_all(list_currency)
-    print("Currencies added succesfully!")
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)

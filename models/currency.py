@@ -1,5 +1,4 @@
 from init import db, ma
-from marshmallow import fields
 
 class Currency(db.Model):
     __tablename__ = "currencies"

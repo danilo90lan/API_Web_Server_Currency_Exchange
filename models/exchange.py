@@ -11,14 +11,14 @@ class Exchange(db.Model):
     date = db.Column(db.DateTime, default=func.now())
 
     from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
-    # to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
+    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
 
-    sender_account = db.relationship("Account", foreign_keys=[from_account_id], back_populates="sender_exchange")
-    # destination_account = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchanges_to")
+    from_account = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
+    to_account = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchanges_to")
 
 class ExchangeSchema(ma.Schema):
-    sender_account = fields.Nested("AccountSChema")
-    destination_account = fields.Nested("AccountSChema")
+    from_account = fields.Nested("AccountSChema")
+    to_account = fields.Nested("AccountSChema")
     class Meta:
-        fields = ("exchange_id", "amount", "curency", "description", "date", "sender_account", "destination_account")
+        fields = ("exchange_id", "amount", "curency", "description", "date")
 
