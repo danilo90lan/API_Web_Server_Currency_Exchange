@@ -1,9 +1,11 @@
+from flask import current_app
 from flask import Blueprint
 from init import db, bcrypt
 from models.user import User
 from models.account import Account
 from models.operation import Operation
 from models.exchange import Exchange
+from models.exchange_account import ExchangeAccount
 from models.currency import Currency
 from datetime import datetime
 from sqlalchemy import text
@@ -54,12 +56,10 @@ def create_tables():
 @db_commands.cli.command("drop")
 def drop_tables():
         # Connect to the database
-        with db.engine.connect() as conn:
-            # Execute raw SQL to drop tables
-            conn.execute(text("DROP TABLE IF EXISTS exchanges CASCADE;"))
-            conn.execute(text("DROP TABLE IF EXISTS accounts CASCADE;"))
-        db.drop_all()
-        print("Tables droppped!")
+        with current_app.app_context():
+            db.reflect()  # Reflect the current database structure
+            db.drop_all()  # This will drop all tables
+            print("All tables dropped successfully")
 
 @db_commands.cli.command("seed")
 def seed_database():
@@ -113,8 +113,46 @@ def seed_database():
         )
     ]
 
+    operations = [
+        Operation(
+            operation_type = "deposit",
+            currency = "EUR",
+            amount = 200,
+            description = "Savings",
+            date = datetime.now(),
+            account = accounts[1]
+        ),
+        Operation(
+            operation_type = "deposit",
+            currency = "USD",
+            amount = 1050,
+            description = "car",
+            date = datetime.now(),
+            account = accounts[2]
+        ),
+        Operation(
+            operation_type = "withdraw",
+            currency = "AUD",
+            amount = 200,
+            description = "Savings",
+            date = datetime.now(),
+            account = accounts[0]
+        ),
+        Operation(
+            operation_type = "deposit",
+            currency = "EUR",
+            amount = 200,
+            description = "Savings",
+            date = datetime.now(),
+            account = accounts[1]
+        )
+    ]
+
+    
+
     update_currency()
 
+    db.session.add_all(operations)
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)

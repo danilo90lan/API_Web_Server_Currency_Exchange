@@ -13,17 +13,13 @@ class Account(db.Model):
     user = db.relationship("User", back_populates="accounts")
     operations = db.relationship("Operation", back_populates="account")
 
-    exchange_from = db.relationship("Exchange", foreign_keys='Exchange.from_account_id', back_populates="from_account")
-    exchanges_to = db.relationship("Exchange", foreign_keys='Exchange.to_account_id', back_populates="to_account")
+    exchange_from = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.from_account_id', back_populates="from_account")
+    exchanges_to = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.to_account_id', back_populates="to_account")
 
 class AccountSchema(ma.Schema):
     user = fields.Nested("UserSchema", only=["name", "email"])
-    operations = fields.List(fields.Nested("OperationSchema"), exclude="account")
-    exchange_from = fields.List(fields.Nested("ExchangeSchema"))
-    exchange_to = fields.List(fields.Nested("ExchangeSchema"))
-    
     class Meta:
-        fields = ("account_id", "currency", "balance", "date_creation", "user", "operations")
+        fields = ("account_id", "currency", "balance", "date_creation", "user")
 
 account_schema = AccountSchema()
 accounts_schema = AccountSchema(many=True)

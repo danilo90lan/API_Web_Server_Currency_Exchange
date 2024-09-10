@@ -16,9 +16,9 @@ class Operation(db.Model):
     account = db.relationship("Account", back_populates="operations")
 
 class OperationSchema(ma.Schema):
-    account = fields.Nested("AccountSchema", only=["currency", "balance"])
+    account = fields.Nested("AccountSchema", only=["account_id", "currency", "balance"])
     class Meta:
-        fields = ("operation_id", "operation_type", "currency", "amount", "description", "date", "account")
+        fields = ("operation_id", "operation_type", "currency", "amount", "description", "date_time", "account")
 
 operation_schema = OperationSchema()
-oprations_schema = OperationSchema(many=True)
+operations_schema = OperationSchema(many=True)

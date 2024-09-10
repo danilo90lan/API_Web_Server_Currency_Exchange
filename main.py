@@ -4,6 +4,8 @@ from marshmallow.exceptions import ValidationError
 
 from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
+from controllers.exchange_account import ex_acc_bp
+from controllers.account import account_bp
 
 
 
@@ -33,5 +35,7 @@ def create_app():
         return {"error": "You are not an authorised user."}, 401
     
     app.register_blueprint(db_commands)
+    app.register_blueprint(ex_acc_bp)
+    app.register_blueprint(account_bp)
    
     return app
