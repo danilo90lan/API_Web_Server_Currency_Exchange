@@ -13,8 +13,8 @@ class Account(db.Model):
     user = db.relationship("User", back_populates="accounts")
     operations = db.relationship("Operation", back_populates="account")
 
-    exchange_from = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.from_account_id', back_populates="from_account")
-    exchanges_to = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.to_account_id', back_populates="to_account")
+    exchange_from = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.from_account_id', back_populates="account_origin")
+    exchanges_to = db.relationship("ExchangeAccount", foreign_keys='ExchangeAccount.to_account_id', back_populates="account_destination")
 
 class AccountSchema(ma.Schema):
     user = fields.Nested("UserSchema", only=["name", "email"])

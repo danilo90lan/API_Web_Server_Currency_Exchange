@@ -11,3 +11,6 @@ class Currency(db.Model):
 class CurrencySchema(ma.Schema):
     class Meta():
         fields = ("currency_id", "currency", "rate", "base_code", "last_update")
+
+currency_schema = CurrencySchema()
+currencies_schema = CurrencySchema(many=True)
