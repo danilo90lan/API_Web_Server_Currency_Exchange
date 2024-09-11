@@ -1,28 +1,32 @@
-from models.exchange_account import ExchangeAccount, exchange_account_schema, exchanges_accounts_schema
 from models.currency import Currency
 from models.account import Account
-from models.exchange import Exchange
+from models.exchange import Exchange, exchange_schema, exchanges_schema
 from init import db
 from flask import Blueprint, request, jsonify
 from datetime import datetime
+from utils.currency_conversion import convert_currency
 
-ex_acc_bp = Blueprint("ex_acc", __name__, url_prefix="/exchanges")
+exchange_bp = Blueprint("ex_acc", __name__, url_prefix="/exchanges")
 
-@ex_acc_bp.route("/")
+@exchange_bp.route("/")
 def get_all_exchanges():
-    statement = db.select(ExchangeAccount).order_by(ExchangeAccount.date_time.asc())
+    statement = db.select(Exchange).order_by(Exchange.date_time.asc())
     exchanges = db.session.scalars(statement)
-    return jsonify(exchanges_accounts_schema.dump(exchanges))
+    return jsonify(exchanges_schema.dump(exchanges))
 
-@ex_acc_bp.route("/", methods=["POST"])
-def currency_exchange():
+@exchange_bp.route("/<int:origin_id>/transfer/<int:destination_id>", methods=["POST"])
+def currency_exchange(origin_id, destination_id):
     body = request.get_json()
 
-    statement = db.select(Account).filter_by(account_id=body.get("from_account"))
-    account_from = db.session.scalar(statement)
+    if origin_id != destination_id:
 
-    statement = db.select(Account).filter_by(account_id=body.get("to_account"))
-    account_to = db.session.scalar(statement)
+        statement = db.select(Account).filter_by(account_id=origin_id)
+        account_from = db.session.scalar(statement)
+
+        statement = db.select(Account).filter_by(account_id=destination_id)
+        account_to = db.session.scalar(statement)
+    else:
+        return {"error":"Cannot transfer funds to the same account. Please select a different account."}
 
     if not account_from:
         return {"error":"the origin account doesn't exist!"}
@@ -55,34 +59,15 @@ def currency_exchange():
         currency_from = body.get("currency_from"),
         amount_exchanged = amount_exchanged,
         currency_to = body.get("currency_to"),
-        description = body.get("description")
-    )
-
-    new_exchange_account = ExchangeAccount(
-        date_time = datetime.today(),
+        description = body.get("description"),
         account_origin = account_from,
         account_destination = account_to,
-        exchange = new_exchange
+        date_time = datetime.today()
     )
 
 
     db.session.add(new_exchange)
-    db.session.add(new_exchange_account)
     db.session.commit()
 
 
     return {body["currency_to"]:amount_exchanged}
-
-def convert_currency(amount, origin, destination):
-    """
-Convert an amount from Currency A to Currency B using USD as the base.
-
-"""
-    
-    statement = db.select(Currency).filter_by(currency=origin)
-    from_code = db.session.scalar(statement)
-    statement = db.select(Currency).filter_by(currency=destination)
-    to_code = db.session.scalar(statement)
-
-    conversion = (amount / from_code.rate) * to_code.rate
-    return conversion

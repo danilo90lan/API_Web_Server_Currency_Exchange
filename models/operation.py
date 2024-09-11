@@ -19,6 +19,7 @@ class OperationSchema(ma.Schema):
     account = fields.Nested("AccountSchema", only=["account_id", "currency", "balance"])
     class Meta:
         fields = ("operation_id", "operation_type", "currency", "amount", "description", "date_time", "account")
-
+        ordered=True
+        
 operation_schema = OperationSchema()
 operations_schema = OperationSchema(many=True)

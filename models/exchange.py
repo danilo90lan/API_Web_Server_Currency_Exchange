@@ -1,5 +1,6 @@
 from init import db, ma
 from marshmallow import fields
+from sqlalchemy import func
 
 class Exchange(db.Model):
     __tablename__ = "exchanges"
@@ -9,15 +10,21 @@ class Exchange(db.Model):
     amount_exchanged = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     currency_to = db.Column(db.String(3), nullable=False)
     description = db.Column(db.String)
+    date_time = db.Column(db.DateTime, default=func.now())
+    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
+    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
 
-    exchange_account = db.relationship("ExchangeAccount", back_populates="exchange")
+    # relationship
+    account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
+    account_destination = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchange_to")
 
 
 class ExchangeSchema(ma.Schema):
-    exchange_account = fields.List(fields.Nested("ExchangeAccountSchema"), exclude="exchange")
+    account_origin = fields.Nested("AccountSchema", only=["account_id", "currency", "balance"])
+    account_destination = fields.Nested("AccountSchema", only=["account_id", "currency", "balance"])
     class Meta:
-        fields = ("exchange_id", "amount", "currency_from", "amount_exchanged", "currency_to", "description", "exchange_account")
+        fields = ("exchange_id", "amount", "currency_from", "amount_exchanged", "currency_to", "description", "account_origin", "account_destination", "date_time")
         ordered = True
 
 exchange_schema = ExchangeSchema()
-exchanges_shema = ExchangeSchema(many=True)
+exchanges_schema = ExchangeSchema(many=True)
