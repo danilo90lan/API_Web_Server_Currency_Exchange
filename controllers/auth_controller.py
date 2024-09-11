@@ -51,6 +51,25 @@ def login():
         return {"error":"the email does NOT exit!"}
 
     if bcrypt.check_password_hash(user.password, body.get("password")):
-         # create JWT
         token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=1))
         return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
+    
+@auth_bp.route("/users", methods=["PUT", "PATCH"])
+@jwt_required()
+def update_user():
+    body = request.get_json()
+    password = body.get("password")
+    # fetch the user from the db
+    statement = db.select(User).filter_by(user_id=get_jwt_identity())
+    user = db.session.scalar(statement)
+    # update the user fields if the user is found in the database
+    if user:
+        user.name = body.get("name") or user.name
+        if password:
+            user.password = bcrypt.generate_password_hash(password).decode("utf-8")
+
+        db.session.commit()
+        return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
+    else:
+        return {"error":f"User {get_jwt_identity()} does NOT exist"}
+

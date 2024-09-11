@@ -21,14 +21,14 @@ def update_currency():
         # Convert the string to a datetime object
         last_update_dt = datetime.strptime(updated_date, "%a, %d %b %Y %H:%M:%S %z")
     except ValueError as e:
-        print("Error parsing date:", e)  # Debug: print any parsing errors
+        print("Error parsing date:", e) 
 
     # Format the datetime object to get just the date
     last_update_date = last_update_dt.strftime("%Y-%m-%d")
 
     for i, j in currency["conversion_rates"].items():
         value = Currency(
-            currency = i,
+            currency_code = i,
             rate = j,
             base_code = currency["base_code"],
             last_update = last_update_date

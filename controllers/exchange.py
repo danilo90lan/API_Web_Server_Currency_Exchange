@@ -28,44 +28,46 @@ def currency_exchange(origin_id, destination_id):
     else:
         return {"error":"Cannot transfer funds to the same account. Please select a different account."}
 
-    if not account_from and account_to:
+    if not account_from:
+        return {"error":"origin account does NOT exist!"}
+
+    if not account_to:
+        return {"error":"origin account does NOT exist!"}
        
-        if account_from.currency != body.get("currency_from"):
-            return {"error":f"origin account has a different currency! ({account_from.currency})"}
+    if account_from.currency != body.get("currency_from"):
+        return {"error":f"origin account has a different currency! ({account_from.currency})"}
 
-        if account_to.currency != body.get("currency_to"):
-            return {"error":f"destination account has a different currency! ({account_to.currency})"}
+    if account_to.currency != body.get("currency_to"):
+        return {"error":f"destination account has a different currency! ({account_to.currency})"}
 
-        account_from.balance -= body.get("amount")
+    account_from.balance -= body.get("amount")
 
-        statement = db.select(Currency).filter_by(currency=body.get("currency_from"))
-        currency_from = db.session.scalar(statement)
+    statement = db.select(Currency).filter_by(currency_code=body.get("currency_from"))
+    currency_from = db.session.scalar(statement)
 
-        statement = db.select(Currency).filter_by(currency=body.get("currency_to"))
-        currency_to = db.session.scalar(statement)
+    statement = db.select(Currency).filter_by(currency_code=body.get("currency_to"))
+    currency_to = db.session.scalar(statement)
 
-        amount = body.get("amount")
-        amount_exchanged = convert_currency(amount, currency_from.currency, currency_to.currency)
-        account_to.balance += int(amount_exchanged)
+    amount = body.get("amount")
+    amount_exchanged = convert_currency(amount, currency_from.currency_code, currency_to.currency_code)
+    account_to.balance += int(amount_exchanged)
 
-        db.session.commit()
+    db.session.commit()
 
-        new_exchange = Exchange(
-            amount = body.get("amount"),
-            currency_from = body.get("currency_from"),
-            amount_exchanged = amount_exchanged,
-            currency_to = body.get("currency_to"),
-            description = body.get("description"),
-            account_origin = account_from,
-            account_destination = account_to,
-            date_time = datetime.today()
-        )
-
-
-        db.session.add(new_exchange)
-        db.session.commit()
+    new_exchange = Exchange(
+        amount = body.get("amount"),
+        currency_from = body.get("currency_from"),
+        amount_exchanged = amount_exchanged,
+        currency_to = body.get("currency_to"),
+        description = body.get("description"),
+        account_origin = account_from,
+        account_destination = account_to,
+        date_time = datetime.today()
+    )
 
 
-        return {body["currency_to"]:amount_exchanged}
-    else:
-        return {"error":"origin account and/or destination account do NOT exist!"}
+    db.session.add(new_exchange)
+    db.session.commit()
+
+
+    return {body["currency_to"]:amount_exchanged}
