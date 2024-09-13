@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.currency_conversion import convert_currency
 
-exchange_bp = Blueprint("ex_acc", __name__, url_prefix="/exchanges")
+exchange_bp = Blueprint("ex_acc", __name__, url_prefix="/exchange")
 
 @exchange_bp.route("/")
 def get_all_exchanges():
@@ -34,11 +34,11 @@ def currency_exchange(origin_id, destination_id):
     if not account_to:
         return {"error":"origin account does NOT exist!"}
        
-    if account_from.currency != body.get("currency_from"):
-        return {"error":f"origin account has a different currency! ({account_from.currency})"}
+    if account_from.currency_code != body.get("currency_from"):
+        return {"error":f"origin account has a different currency! ({account_from.currency_code})"}
 
-    if account_to.currency != body.get("currency_to"):
-        return {"error":f"destination account has a different currency! ({account_to.currency})"}
+    if account_to.currency_code != body.get("currency_to"):
+        return {"error":f"destination account has a different currency! ({account_to.currency_code})"}
 
     account_from.balance -= body.get("amount")
 

@@ -5,16 +5,20 @@ from sqlalchemy import func
 class Exchange(db.Model):
     __tablename__ = "exchanges"
     exchange_id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
-    currency_from = db.Column(db.String(3), nullable=False)
+    amount = db.Column(db.Numeric(precision=10, scale=2))
     amount_exchanged = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
-    currency_to = db.Column(db.String(3), nullable=False)
     description = db.Column(db.String)
     date_time = db.Column(db.DateTime, default=func.now())
+
+    # foreign keys
     from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
     to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
+    currency_from = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
+    currency_to = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
 
-    # relationship
+    # relationships
+    currency_origin = db.relationship("Currency", foreign_keys=[currency_from], back_populates="exchanges_from")
+    currency_destination = db.relationship("Currency", foreign_keys=[currency_to], back_populates="exchanges_to")
     account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
     account_destination = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchange_to")
 

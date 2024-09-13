@@ -3,7 +3,7 @@ from flask import Blueprint
 from init import db, bcrypt
 from models.user import User
 from models.account import Account
-from models.operation import Operation
+from models.deposit import Deposit
 from models.exchange import Exchange
 from models.currency import Currency
 from datetime import datetime
@@ -31,8 +31,8 @@ def seed_database():
     
     users = [
         User(
-            name="User 1",
-            email="cao@gmail.com",
+            name="danilo",
+            email="danilo.lann@gmail.com",
             password=bcrypt.generate_password_hash("123456").decode('utf8'),
             is_admin=True
         ),
@@ -53,62 +53,58 @@ def seed_database():
     
     accounts = [
         Account(
-            currency = "AUD",
+            currency_code = "AUD",
             balance = 1000,
             date_creation = datetime.now(),
             user = users[0]
         ),
             Account(
-            currency = "EUR",
+            currency_code = "EUR",
             balance = 3500.76,
             date_creation = datetime.now(),
             user = users[0]
         ),
             Account(
-            currency = "USD",
+            currency_code = "USD",
             balance = 597,
             date_creation = datetime.now(),
             user = users[1]
         ),
             Account(
-            currency = "USD",
+            currency_code = "USD",
             balance = 300,
             date_creation = datetime.now(),
             user = users[2]
         )
     ]
 
-    operations = [
-        Operation(
-            operation_type = "deposit",
-            currency = "EUR",
+    deposits = [
+        Deposit(
+            currency_code = "EUR",
             amount = 200,
             description = "Savings",
-            date = datetime.now(),
+            date_time = datetime.now(),
             account = accounts[1]
         ),
-        Operation(
-            operation_type = "deposit",
-            currency = "USD",
+        Deposit(
+            currency_code = "USD",
             amount = 1050,
             description = "car",
-            date = datetime.now(),
+            date_time = datetime.now(),
             account = accounts[2]
         ),
-        Operation(
-            operation_type = "withdraw",
-            currency = "AUD",
+        Deposit(
+            currency_code = "AUD",
             amount = 200,
             description = "Savings",
-            date = datetime.now(),
+            date_time = datetime.now(),
             account = accounts[0]
         ),
-        Operation(
-            operation_type = "deposit",
-            currency = "EUR",
+        Deposit(
+            currency_code = "EUR",
             amount = 200,
             description = "Savings",
-            date = datetime.now(),
+            date_time = datetime.now(),
             account = accounts[1]
         )
     ]
@@ -117,7 +113,7 @@ def seed_database():
 
     update_currency()
 
-    db.session.add_all(operations)
+    db.session.add_all(deposits)
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)

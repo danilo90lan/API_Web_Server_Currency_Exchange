@@ -4,7 +4,7 @@ from marshmallow.exceptions import ValidationError
 
 from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
-from controllers.exchange import exchange_bp
+from controllers.exchange_controllers import exchange_bp
 from controllers.account import account_bp
 from controllers.currency import currency_bp
 from controllers.auth_controller import auth_bp

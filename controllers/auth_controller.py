@@ -53,6 +53,9 @@ def login():
     if bcrypt.check_password_hash(user.password, body.get("password")):
         token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=1))
         return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
+    else:
+        # Respond back with an error message
+        return {"error": "Invalid email or password"}, 400
     
 @auth_bp.route("/users", methods=["PUT", "PATCH"])
 @jwt_required()
