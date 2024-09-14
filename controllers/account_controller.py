@@ -3,11 +3,12 @@ from models.account import Account, accounts_schema, account_schema
 from init import db
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
+from controllers.exchange_controllers import exchange_bp
 from datetime import datetime
 
 
 account_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
+account_bp.register_blueprint(exchange_bp)
 
 # #get all accounts
 # @account_bp.route("/")

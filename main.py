@@ -23,7 +23,7 @@ def create_app():
 
     
     app.register_blueprint(db_commands)
-    app.register_blueprint(exchange_bp)
+    # app.register_blueprint(exchange_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(currency_bp)
     app.register_blueprint(auth_bp)

@@ -11,8 +11,8 @@ class Exchange(db.Model):
     date_time = db.Column(db.DateTime, default=func.now())
 
     # foreign keys
-    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
-    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
+    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
+    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
     currency_from = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
     currency_to = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
 
