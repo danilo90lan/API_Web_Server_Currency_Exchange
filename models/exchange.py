@@ -5,7 +5,7 @@ from sqlalchemy import func
 class Exchange(db.Model):
     __tablename__ = "exchanges"
     exchange_id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Numeric(precision=10, scale=2))
+    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     amount_exchanged = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     description = db.Column(db.String)
     date_time = db.Column(db.DateTime, default=func.now())
@@ -13,12 +13,8 @@ class Exchange(db.Model):
     # foreign keys
     from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
     to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
-    currency_from = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
-    currency_to = db.Column(db.String(3), db.ForeignKey('currencies.currency_code'), nullable=False)
 
     # relationships
-    currency_origin = db.relationship("Currency", foreign_keys=[currency_from], back_populates="exchanges_from")
-    currency_destination = db.relationship("Currency", foreign_keys=[currency_to], back_populates="exchanges_to")
     account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
     account_destination = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchange_to")
 
@@ -26,10 +22,8 @@ class Exchange(db.Model):
 class ExchangeSchema(ma.Schema):
     account_origin = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
     account_destination = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
-    currency_origin = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
-    currency_destination  = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
     class Meta:
-        fields = ("exchange_id", "amount", "currency_origin", "currency_destination", "account_origin", "account_destination", "amount_exchanged", "description", "date_time")
+        fields = ("exchange_id", "amount", "account_origin", "account_destination", "amount_exchanged", "description", "date_time")
         ordered = True
 
 exchange_schema = ExchangeSchema()

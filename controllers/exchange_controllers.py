@@ -99,9 +99,7 @@ def currency_exchange(account_id, destination_id):
         # create a new instance of Exchange
         new_exchange = Exchange(
             amount = body.get("amount"),
-            currency_from = body.get("currency_from"),
             amount_exchanged = amount_exchanged,
-            currency_to = body.get("currency_to"),
             description = body.get("description"),
             account_origin = account_from,
             account_destination = account_to,

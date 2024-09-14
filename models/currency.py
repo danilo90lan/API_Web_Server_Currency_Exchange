@@ -9,8 +9,6 @@ class Currency(db.Model):
 
     account = db.relationship('Account', back_populates='currency')
     deposit = db.relationship('Deposit', back_populates='currency')
-    exchanges_from = db.relationship("Exchange", foreign_keys="Exchange.currency_from", back_populates="currency_origin")
-    exchanges_to = db.relationship("Exchange", foreign_keys="Exchange.currency_to", back_populates="currency_destination")
 
 class CurrencySchema(ma.Schema):
     class Meta():
