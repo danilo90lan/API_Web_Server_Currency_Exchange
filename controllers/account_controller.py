@@ -13,12 +13,13 @@ account_bp.register_blueprint(exchange_bp)
 account_bp.register_blueprint(deposit_bp)
 
 
-# #get all accounts
-# @account_bp.route("/")
-# def get_all_accounts():
-#     statement = db.select(Account)
-#     accounts = db.session.scalars(statement)
-#     return jsonify(accounts_schema.dump(accounts))
+#get all accounts
+@account_bp.route("/all")
+@jwt_required()
+def get_all_accounts():
+    statement = db.select(Account)
+    accounts = db.session.scalars(statement)
+    return jsonify(accounts_schema.dump(accounts))
 
 # get accounts that belong to the id
 @account_bp.route("/")

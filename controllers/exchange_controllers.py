@@ -33,7 +33,7 @@ def get_exchanges(account_id):
     account = db.session.scalar(statement)
 
     if not account:
-        return jsonify({'error': 'Account not found for this user'}), 404
+        return jsonify({'error': 'This account doesn NOT belong to the current user'}), 404
 
     # Get exchanges involving this account
     statement = db.select(Exchange).filter(
