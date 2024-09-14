@@ -4,11 +4,14 @@ from init import db
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from controllers.exchange_controllers import exchange_bp
+from controllers.deposit_controller import deposit_bp
 from datetime import datetime
 
 
 account_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 account_bp.register_blueprint(exchange_bp)
+account_bp.register_blueprint(deposit_bp)
+
 
 # #get all accounts
 # @account_bp.route("/")

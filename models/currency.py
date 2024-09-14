@@ -8,7 +8,6 @@ class Currency(db.Model):
     last_update = db.Column(db.Date)
 
     account = db.relationship('Account', back_populates='currency')
-    deposit = db.relationship('Deposit', back_populates='currency')
 
 class CurrencySchema(ma.Schema):
     class Meta():

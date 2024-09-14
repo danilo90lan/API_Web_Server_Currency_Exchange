@@ -80,28 +80,24 @@ def seed_database():
 
     deposits = [
         Deposit(
-            currency_code = "EUR",
             amount = 200,
             description = "Savings",
             date_time = datetime.now(),
             account = accounts[1]
         ),
         Deposit(
-            currency_code = "USD",
             amount = 1050,
             description = "car",
             date_time = datetime.now(),
             account = accounts[2]
         ),
         Deposit(
-            currency_code = "AUD",
             amount = 200,
             description = "Savings",
             date_time = datetime.now(),
             account = accounts[0]
         ),
         Deposit(
-            currency_code = "EUR",
             amount = 200,
             description = "Savings",
             date_time = datetime.now(),

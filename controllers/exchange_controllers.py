@@ -26,8 +26,6 @@ def get_exchanges(account_id):
         return jsonify({'error': 'User not authenticated'}), 401
 
     # Check if the account belongs to the user
-    # scalar_one_or_none() is used to get a single result or None if no result is found. 
-    # This method raises an error if more than one result is found.
     statement = db.select(Account).filter(
         (Account.user_id == user_id) &  #AND operator
         (Account.account_id==account_id)
