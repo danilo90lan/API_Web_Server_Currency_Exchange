@@ -24,12 +24,12 @@ class Exchange(db.Model):
 
 
 class ExchangeSchema(ma.Schema):
-    account_origin = fields.Nested("AccountSchema", only=["account_id", "balance"])
-    account_destination = fields.Nested("AccountSchema", only=["account_id", "balance"])
-    currency_origin = fields.Nested("CurrencySchema", only=["currency_code", "rate", "base_code"])
-    currency_destination  = fields.Nested("CurrencySchema", only=["currency_code", "rate", "base_code"])
+    account_origin = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
+    account_destination = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
+    currency_origin = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
+    currency_destination  = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
     class Meta:
-        fields = ("exchange_id", "amount", "currency_origin", "amount_exchanged", "currency_destination", "account_origin", "account_destination", "description", "date_time")
+        fields = ("exchange_id", "amount", "currency_origin", "currency_destination", "account_origin", "account_destination", "amount_exchanged", "description", "date_time")
         ordered = True
 
 exchange_schema = ExchangeSchema()

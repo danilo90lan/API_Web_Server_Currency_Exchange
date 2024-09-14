@@ -6,13 +6,47 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.currency_conversion import convert_currency
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 exchange_bp = Blueprint("ex_acc", __name__, url_prefix="/exchange")
 
-@exchange_bp.route("/")
-def get_all_exchanges():
-    statement = db.select(Exchange).order_by(Exchange.date_time.asc())
+# @exchange_bp.route("/")
+# def get_all_exchanges():
+#     statement = db.select(Exchange).order_by(Exchange.date_time.asc())
+#     exchanges = db.session.scalars(statement)
+#     return jsonify(exchanges_schema.dump(exchanges))
+
+@exchange_bp.route("/<int:account_id>")
+@jwt_required()
+def get_exchanges(account_id):
+    # Get the user_id from JWT identity
+    user_id = get_jwt_identity()
+    
+    if not user_id:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    # Check if the account belongs to the user
+    # scalar_one_or_none() is used to get a single result or None if no result is found. 
+    # This method raises an error if more than one result is found.
+    statement = db.select(Account).filter(
+        (Account.user_id == user_id) &  #AND operator
+        (Account.account_id==account_id)
+        )
+    account = db.session.scalar(statement)
+
+    if not account:
+        return jsonify({'error': 'Account not found for this user'}), 404
+
+    # Get exchanges involving this account
+    statement = db.select(Exchange).filter(
+            (Exchange.from_account_id == account_id) | #OR opearator
+            (Exchange.to_account_id == account_id)
+        )
     exchanges = db.session.scalars(statement)
+
+    # Format the results
     return jsonify(exchanges_schema.dump(exchanges))
+    
 
 @exchange_bp.route("/<int:origin_id>/transfer/<int:destination_id>", methods=["POST"])
 def currency_exchange(origin_id, destination_id):
