@@ -36,5 +36,6 @@ def update_exchange_rates():
         list_currency.append(value)
         
     db.session.add_all(list_currency)
+    db.session.commit()
     print("Currencies added succesfully!")
    

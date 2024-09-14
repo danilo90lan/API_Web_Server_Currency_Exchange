@@ -9,7 +9,7 @@ class Deposit(db.Model):
     description = db.Column(db.String)
     date_time = db.Column(db.DateTime, default=func.now())
     
-    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
 
     account = db.relationship("Account", back_populates="deposits")
 

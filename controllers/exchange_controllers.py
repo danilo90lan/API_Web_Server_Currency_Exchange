@@ -21,10 +21,6 @@ exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>/exch
 def get_exchanges(account_id):
     # Get the user_id from JWT identity
     user_id = get_jwt_identity()
-    
-    if not user_id:
-        return jsonify({'error': 'User not authenticated'}), 401
-
     # Check if the account belongs to the user
     statement = db.select(Account).filter(
         (Account.user_id == user_id) &  #AND operator
@@ -42,8 +38,11 @@ def get_exchanges(account_id):
         )
     exchanges = db.session.scalars(statement)
 
-    # Format the results
-    return jsonify(exchanges_schema.dump(exchanges))
+    if exchanges==None:
+        return jsonify(exchanges_schema.dump(exchanges))
+    else:
+        return {"message":f"There is NO exchanges operations hsistory for the account {account_id}"}
+
 
 @exchange_bp.route("/transfer/<int:destination_id>", methods=["POST"])
 @jwt_required()

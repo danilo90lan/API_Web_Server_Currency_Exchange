@@ -16,6 +16,8 @@ db_commands = Blueprint("db", __name__)
 @db_commands.cli.command("create")
 def create_tables():
     db.create_all()
+    # Initialize currency_table
+    update_exchange_rates()
     print("Tables created!")
 
 @db_commands.cli.command("drop")
@@ -105,9 +107,6 @@ def seed_database():
         )
     ]
 
-    
-
-    update_exchange_rates()
 
     db.session.add_all(deposits)
     db.session.add_all(users)

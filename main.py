@@ -20,8 +20,8 @@ def create_app():
     ma.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-
     
+    # register blueprints
     app.register_blueprint(db_commands)
     app.register_blueprint(account_bp)
     app.register_blueprint(currency_bp)

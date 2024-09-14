@@ -1,4 +1,3 @@
-from models.currency import Currency
 from models.account import Account
 from models.deposit import Deposit, deposit_schema, deposits_schema
 from init import db
@@ -14,10 +13,6 @@ deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 def get_deposits(account_id):
     # Get the user_id from JWT identity
     user_id = get_jwt_identity()
-    
-    if not user_id:
-        return jsonify({'error': 'User not authenticated'}), 401
-
     # Check if the account belongs to the user
     statement = db.select(Account).filter(
         (Account.user_id == user_id) &  #AND operator
@@ -30,10 +25,12 @@ def get_deposits(account_id):
 
     # Get deposit involving this account
     statement = db.select(Deposit).filter((Deposit.account_id == account_id))
-    exchanges = db.session.scalars(statement)
+    deposits = db.session.scalars(statement)
 
-    # Format the results
-    return jsonify(deposits_schema.dump(exchanges))
+    if deposits==None:
+        return jsonify(deposits_schema.dump(deposits))
+    else:
+        return {"message":f"There is NO deposit operations hsistory for the account {account_id}"}
 
 @deposit_bp.route("/deposit", methods=["POST"])
 @jwt_required()
@@ -42,7 +39,7 @@ def deposit_amount(account_id):
     user_id = get_jwt_identity()
     
     if not user_id:
-        return jsonify({'error': 'User not authenticated'}), 401
+        return jsonify({"error": "User not authenticated"}), 401
 
     # Check if the account belongs to the user
     statement = db.select(Account).filter(
@@ -59,7 +56,7 @@ def deposit_amount(account_id):
     amount = body.get('amount')
     
     if amount is None:
-        return jsonify({'error': 'Amount is required'}), 400
+        return jsonify({"error": "Amount is required"}), 400
 
     # update account's balance
     account.balance += amount

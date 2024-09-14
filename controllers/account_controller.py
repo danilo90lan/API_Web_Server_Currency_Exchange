@@ -43,3 +43,24 @@ def create_account():
     db.session.add(account)
     db.session.commit()
     return {"SUCCESS":account_schema.dump(account)}
+
+@account_bp.route("/<int:account_id>", methods=["DELETE"])
+@jwt_required()
+def delete_Account(account_id):
+    # Get the user_id from JWT identity
+    user_id = get_jwt_identity()
+    # Check if the account belongs to the user
+    statement = db.select(Account).filter(
+        (Account.user_id == user_id) &  #AND operator
+        (Account.account_id==account_id)
+        )
+    account = db.session.scalar(statement)
+    if account:
+        if account.balance == 0:
+            db.session.delete(account)
+            db.session.commit()
+            return {"success":f"The account {account_id} has been succesfully DELETED"}
+        else:
+            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
+    else:
+        return {'error': f'The account {account_id} does NOT belong to the current user'}, 404

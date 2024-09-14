@@ -11,8 +11,8 @@ class Exchange(db.Model):
     date_time = db.Column(db.DateTime, default=func.now())
 
     # foreign keys
-    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
-    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
+    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
+    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
 
     # relationships
     account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")

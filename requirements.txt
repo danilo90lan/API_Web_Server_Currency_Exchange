@@ -1,8 +1,4 @@
-certifi==2024.8.30
-charset-normalizer==3.3.2
-idna==3.8
-requests==2.32.3
-urllib3==2.2.2
+async-timeout==4.0.3
 bcrypt==4.2.0
 blinker==1.8.2
 certifi==2024.8.30
@@ -24,8 +20,12 @@ packaging==24.1
 psycopg2-binary==2.9.9
 PyJWT==2.9.0
 python-dotenv==1.0.1
+pytz==2024.2
+redis==5.0.8
 requests==2.32.3
+six==1.16.0
 SQLAlchemy==2.0.34
 typing_extensions==4.12.2
+tzlocal==5.2
 urllib3==2.2.2
 Werkzeug==3.0.4
