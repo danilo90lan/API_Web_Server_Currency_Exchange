@@ -1,6 +1,5 @@
 from init import db, ma
 from marshmallow import fields
-from sqlalchemy import func
 
 class User(db.Model):
     __tablename__ = "users"

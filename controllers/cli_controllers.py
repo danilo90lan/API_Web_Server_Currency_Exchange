@@ -7,7 +7,7 @@ from models.deposit import Deposit
 from models.exchange import Exchange
 from models.currency import Currency
 from datetime import datetime
-from utils.currency_rates import update_currency
+from utils.currency_rates import update_exchange_rates
 
 
 db_commands = Blueprint("db", __name__)
@@ -33,21 +33,21 @@ def seed_database():
         User(
             name="danilo",
             email="danilo.lann@gmail.com",
-            password=bcrypt.generate_password_hash("123456").decode('utf8'),
+            password=bcrypt.generate_password_hash("1234").decode('utf8'),
             is_admin=True
         ),
 
         User(
-            name="User 2",
+            name="alberto",
             email="alberto@gmail.com",
-            password=bcrypt.generate_password_hash("5678").decode('utf8'),
+            password=bcrypt.generate_password_hash("1234").decode('utf8'),
             is_admin=True
         ),
 
         User(
-            name="User 3",
+            name="marco",
             email="marco@gmail.com",
-            password=bcrypt.generate_password_hash("10998765").decode('utf8')
+            password=bcrypt.generate_password_hash("1234").decode('utf8')
         )
     ]
     
@@ -111,7 +111,7 @@ def seed_database():
 
     
 
-    update_currency()
+    update_exchange_rates()
 
     db.session.add_all(deposits)
     db.session.add_all(users)

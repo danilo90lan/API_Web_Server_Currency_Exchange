@@ -13,7 +13,7 @@ def get_currencies():
 
 
 
-def update_currency():
+def update_exchange_rates():
     list_currency = []
     currency = get_currencies()
     updated_date = currency["time_last_update_utc"]  

@@ -5,8 +5,8 @@ from marshmallow.exceptions import ValidationError
 from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
 from controllers.exchange_controllers import exchange_bp
-from controllers.account import account_bp
-from controllers.currency import currency_bp
+from controllers.account_controller import account_bp
+from controllers.currency_controller import currency_bp
 from controllers.auth_controller import auth_bp
 
 
@@ -20,21 +20,6 @@ def create_app():
     ma.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-
-
-
-    @app.errorhandler(ValidationError)
-    def validation_error(err):
-        return {"error": err.messages}, 400
-    
-    @app.errorhandler(400)
-    def bad_request(err):
-        return {"error": err.messages}, 400
-    
-    @app.errorhandler(401)
-    def unauthorised():
-        return {"error": "You are not an authorised user."}, 401
-    
 
     
     app.register_blueprint(db_commands)
