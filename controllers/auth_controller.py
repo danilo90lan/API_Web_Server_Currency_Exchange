@@ -2,14 +2,28 @@ from datetime import timedelta
 
 from flask import Blueprint, jsonify, request
 
-from models.user import User, user_schema
+from models.user import User, user_schema, users_schema
 from init import bcrypt, db
 
 from sqlalchemy.exc import IntegrityError
 from psycopg2 import errorcodes
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
+from utils.check_admin import authorize_as_admin
+
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+
+#get all users
+@auth_bp.route("/all")
+@jwt_required()
+def get_all_users():
+    if authorize_as_admin():
+        statement = db.select(User)
+        users = db.session.scalars(statement)
+        return jsonify(users_schema.dump(users))
+    else:
+        return {"error":"Not authorized to perform this action!"}
 
 
 @auth_bp.route("/register", methods=["POST"])

@@ -8,6 +8,7 @@ from controllers.deposit_controller import deposit_bp
 from datetime import datetime
 
 from utils.check_account_user import check_account_user
+from utils.check_admin import authorize_as_admin
 
 
 account_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
@@ -19,9 +20,12 @@ account_bp.register_blueprint(deposit_bp)
 @account_bp.route("/all")
 @jwt_required()
 def get_all_accounts():
-    statement = db.select(Account)
-    accounts = db.session.scalars(statement)
-    return jsonify(accounts_schema.dump(accounts))
+    if authorize_as_admin():
+        statement = db.select(Account)
+        accounts = db.session.scalars(statement)
+        return jsonify(accounts_schema.dump(accounts))
+    else:
+        return {"error":"Not authorized to perform this action!"}
 
 # get accounts that belong to the id
 @account_bp.route("/")
