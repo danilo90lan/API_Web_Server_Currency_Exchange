@@ -74,7 +74,7 @@ def update_account(account_id):
         statement = db.select(Account).filter_by(account_id=account_id)
         account = db.session.scalar(statement)
         if account:
-            body = request.get_json()
+            body = account_schema.load(request.get_json())
             account.account_name = body.get("account_name") or account.account_name
             account.description = body.get("description") or account.description
 

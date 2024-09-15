@@ -28,7 +28,7 @@ class AccountSchema(ma.Schema):
     # Validation
     account_name = fields.String(validate=Length(min=4, error="Title must be at least 4 characthers in length."))
     class Meta:
-        fields = ("account_id", "account_name", "currency_code", "balance", "description", "date_creation", "currency", "user")
+        fields = ("account_id", "account_name", "balance", "currency_code", "description", "date_creation", "currency", "user")
         ordered=True
 
 account_schema = AccountSchema()

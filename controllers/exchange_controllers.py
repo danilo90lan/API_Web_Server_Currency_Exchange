@@ -66,7 +66,7 @@ def currency_exchange(account_id, destination_id):
             if account_from.balance >= body.get("amount"):
                 account_from.balance -= body.get("amount")
             else:
-                return {"error": "Insufficient funds in the origin account."}
+                return {"error": f"Insufficient funds in the account {account_from.account_id}."}
         else:
             return {"error":"Amount MUST be greater than 0"}
         

@@ -44,7 +44,7 @@ def deposit_amount(account_id):
     account = db.session.scalar(statement)
 
     if not account:
-        return jsonify({"error": "This account doesn NOT belong to the current user"}), 404
+        return jsonify({"error": "This account does NOT belong to the current user"}), 404
 
     # Get the deposit amount from the request body
     body = request.get_json()
