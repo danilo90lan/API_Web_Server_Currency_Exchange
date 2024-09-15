@@ -13,9 +13,9 @@ class User(db.Model):
     accounts = db.relationship("Account", back_populates="user")
 
 class UserSchema(ma.Schema):
-     account = fields.List(fields.Nested("AccountSchema", exclude=["user"]))
+     accounts = fields.List(fields.Nested("AccountSchema", exclude=["user"]))
      class Meta:
-        fields = ("user_id", "name", "email", "password", "is_admin")
+        fields = ("user_id", "name", "email", "password", "is_admin", "accounts")
 
 user_schema = UserSchema(exclude=["password"])
 users_schema = UserSchema(many=True, exclude=["password"])
