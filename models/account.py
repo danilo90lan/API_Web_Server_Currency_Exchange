@@ -1,13 +1,16 @@
 from init import db, ma
 from marshmallow import fields
-from marshmallow.validate import Length
+from marshmallow.validate import Length, OneOf
 from sqlalchemy import func
 
+from utils.currency import get_currencies_codes
+
+VALID_CURRENCY_CODES = get_currencies_codes()
 
 class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
-    account_name = db.Column(db.String, default="FUNDS")
+    account_name = db.Column(db.String, default="FUNDS") # VALIDATED
     description = db.Column(db.String)
     balance = db.Column(db.Numeric(precision=10, scale=2), default=0)
     date_creation = db.Column(db.DateTime, default=func.now())
@@ -27,6 +30,8 @@ class AccountSchema(ma.Schema):
 
     # Validation
     account_name = fields.String(validate=Length(min=4, error="Title must be at least 4 characthers in length."))
+    currency_code = fields.String(validate=OneOf(VALID_CURRENCY_CODES))
+    
     class Meta:
         fields = ("account_id", "account_name", "balance", "currency_code", "description", "date_creation", "currency", "user")
         ordered=True

@@ -2,6 +2,7 @@ from init import db
 from models.currency import Currency
 from datetime import datetime
 import requests
+from flask import current_app
 
 
 def get_currencies():
@@ -38,4 +39,11 @@ def update_exchange_rates():
     db.session.add_all(list_currency)
     db.session.commit()
     print("Currencies added succesfully!")
-   
+
+def get_currencies_codes():
+    currency = get_currencies()
+    list_currency_codes = []
+    for i in currency["conversion_rates"].items():
+        code = i[0]
+        list_currency_codes.append(code)
+    return tuple(list_currency_codes)

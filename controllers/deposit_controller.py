@@ -3,7 +3,7 @@ from models.deposit import Deposit, deposit_schema, deposits_schema
 from init import db
 from flask import Blueprint, request, jsonify
 
-from utils.check_account_user import check_account_user
+from utils.authorization import check_account_user
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 

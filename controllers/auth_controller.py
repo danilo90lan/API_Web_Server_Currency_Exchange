@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from psycopg2 import errorcodes
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-from utils.check_admin import authorize_as_admin
+from utils.authorization import authorize_as_admin
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 

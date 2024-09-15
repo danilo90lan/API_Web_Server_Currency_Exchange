@@ -7,8 +7,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from controllers.exchange_controllers import exchange_bp
 from controllers.deposit_controller import deposit_bp
 
-from utils.check_account_user import check_account_user
-from utils.check_admin import authorize_as_admin
+from utils.authorization import check_account_user
+from utils.authorization import authorize_as_admin
 
 
 account_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
