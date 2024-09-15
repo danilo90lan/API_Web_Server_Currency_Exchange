@@ -1,4 +1,5 @@
 from models.account import Account, accounts_schema, account_schema
+from models.user import User
 
 from init import db
 from flask import Blueprint, request, jsonify
@@ -19,13 +20,28 @@ account_bp.register_blueprint(deposit_bp)
 #get all accounts
 @account_bp.route("/all")
 @jwt_required()
-def get_all_accounts():
+def count_accounts_grouped_by_user():
     if authorize_as_admin():
-        statement = db.select(Account)
-        accounts = db.session.scalars(statement)
-        return jsonify(accounts_schema.dump(accounts))
+        # Query to count the accounts, grouped by user_id. Perform a JOIN
+        # with the User table in order to retrieve the account name
+        statement = db.session.query(
+            User.user_id, User.name, db.func.count(Account.account_id)
+        ).join(Account, User.user_id == Account.user_id).group_by(User.user_id, User.name)
+
+        user_accounts = statement.all()
+
+        # Format the result
+        result = []
+        for user_id, name, count in user_accounts:
+            record = {
+                "user_id": user_id,
+                "name": name,
+                "number of active accounts": count
+            }
+            result.append(record)
+        return jsonify(result)
     else:
-        return {"error":"Not authorized to perform this action!"}
+        return {"error": "Not authorized to perform this action!"}
 
 # get accounts that belong to the id
 @account_bp.route("/")
