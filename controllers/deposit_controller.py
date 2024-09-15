@@ -4,6 +4,8 @@ from init import db
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 
+from utils.check_account_user import check_account_user
+
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
@@ -11,26 +13,20 @@ deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 @deposit_bp.route("/deposit-history")
 @jwt_required()
 def get_deposits(account_id):
-    # Get the user_id from JWT identity
-    user_id = int(get_jwt_identity())
-    # Check if the account belongs to the user
-    statement = db.select(Account).filter(
-        (Account.user_id == user_id) &  #AND operator
-        (Account.account_id==account_id)
-        )
-    account = db.session.scalar(statement)
+    verify_account = check_account_user(account_id)
+    if verify_account == True:
 
-    if not account:
-        return jsonify({"error": "This account doesn NOT belong to the current user"}), 404
+        # Get deposit involving this account
+        statement = db.select(Deposit).filter((Deposit.account_id == account_id))
+        result = db.session.execute(statement)
+        deposits = result.scalars().all()  # Convert to a list in order to check if the list is empty
 
-    # Get deposit involving this account
-    statement = db.select(Deposit).filter((Deposit.account_id == account_id))
-    deposits = db.session.scalars(statement)
-
-    if deposits==None:
-        return jsonify(deposits_schema.dump(deposits))
+        if deposits:
+            return jsonify(deposits_schema.dump(deposits))
+        else:
+            return {"message":f"There is NO deposit operations history for the account {account_id}"}
     else:
-        return {"message":f"There is NO deposit operations hsistory for the account {account_id}"}
+        return verify_account
 
 @deposit_bp.route("/deposit", methods=["POST"])
 @jwt_required()

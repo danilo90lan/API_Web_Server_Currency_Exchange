@@ -7,6 +7,8 @@ from controllers.exchange_controllers import exchange_bp
 from controllers.deposit_controller import deposit_bp
 from datetime import datetime
 
+from utils.check_account_user import check_account_user
+
 
 account_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 account_bp.register_blueprint(exchange_bp)
@@ -47,15 +49,11 @@ def create_account():
 @account_bp.route("/<int:account_id>", methods=["DELETE"])
 @jwt_required()
 def delete_Account(account_id):
-    # Get the user_id from JWT identity
-    user_id = int(get_jwt_identity())
-    # Check if the account belongs to the user
-    statement = db.select(Account).filter(
-        (Account.user_id == user_id) &  #AND operator
-        (Account.account_id==account_id)
-        )
-    account = db.session.scalar(statement)
-    if account:
+    verify_account = check_account_user(account_id)
+    if verify_account == True:
+        statement = db.select(Account).filter_by(account_id=account_id)
+        account = db.session.scalar(statement)
+        
         if account.balance == 0:
             db.session.delete(account)
             db.session.commit()
@@ -63,4 +61,4 @@ def delete_Account(account_id):
         else:
             return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
     else:
-        return {'error': f'The account {account_id} does NOT belong to the current user'}, 404
+        return verify_account

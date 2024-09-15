@@ -12,7 +12,6 @@ def get_currencies():
         return "The request failed", response.status_code
 
 
-
 def update_exchange_rates():
     list_currency = []
     currency = get_currencies()

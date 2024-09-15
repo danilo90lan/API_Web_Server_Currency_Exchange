@@ -6,10 +6,11 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 
 from utils.currency_conversion import convert_currency
+from utils.check_account_user import check_account_user
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>/exchanges")
+exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 
 # @exchange_bp.route("/")
 # def get_all_exchanges():
@@ -17,32 +18,26 @@ exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>/exch
 #     exchanges = db.session.scalars(statement)
 #     return jsonify(exchanges_schema.dump(exchanges))
 
-@exchange_bp.route("/")
+@exchange_bp.route("/exchange-history")
 @jwt_required()
 def get_exchanges(account_id):
-    # check if the account exists
-    statement = db.select(Account).filter_by(account_id=account_id)
-    account = db.session.scalar(statement)
-    if not account:
-        return {"error":"The account does NOT exist!"}, 404
+    verify_account = check_account_user(account_id)
+    if verify_account==True:
 
-    # Get the user_id from JWT identity
-    user_id = int(get_jwt_identity())
-    # Check if the account belongs to the user
-    if account.user_id == user_id:
         # Get exchanges involving this account
         statement = db.select(Exchange).filter(
                 (Exchange.from_account_id == account_id) | #OR opearator
                 (Exchange.to_account_id == account_id)
             )
-        exchanges = db.session.scalars(statement)
+        result = db.session.execute(statement)
+        exchanges = result.scalars().all()  # Convert to a list in order to check if the list is empty
 
-        if exchanges==None:
+        if exchanges:
             return jsonify(exchanges_schema.dump(exchanges))
         else:
-            return {"message":f"There is NO exchanges operations hsistory for the account {account_id}"}
+            return {"message":f"There is NO exchanges operations history for the account {account_id}"}
     else:
-        return {"error": f"The account {account_id} doesn NOT belong to the current user"}
+        return verify_account 
 
 
 @exchange_bp.route("/transfer/<int:destination_id>", methods=["POST"])
