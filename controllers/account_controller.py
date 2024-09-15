@@ -6,7 +6,6 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from controllers.exchange_controllers import exchange_bp
 from controllers.deposit_controller import deposit_bp
-from datetime import datetime
 
 from utils.check_account_user import check_account_user
 from utils.check_admin import authorize_as_admin
@@ -43,7 +42,7 @@ def count_accounts_grouped_by_user():
     else:
         return {"error": "Not authorized to perform this action!"}
 
-# get accounts that belong to the id
+# get accounts that belong to the current user
 @account_bp.route("/")
 @jwt_required()
 def get_accounts():
@@ -55,11 +54,12 @@ def get_accounts():
 @account_bp.route("/", methods=["POST"])
 @jwt_required()
 def create_account():
-    body = request.get_json()
+    body = account_schema.load(request.get_json())
     account = Account(
+        account_name = body.get("account_name"),
+        description = body.get("description"),
         balance = body.get("balance"),
         currency_code = body.get("currency_code"),
-        date_creation = datetime.today(),
         user_id = int(get_jwt_identity())
     )
     db.session.add(account)

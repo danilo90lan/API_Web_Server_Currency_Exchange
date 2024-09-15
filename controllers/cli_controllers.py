@@ -6,7 +6,6 @@ from models.account import Account
 from models.deposit import Deposit
 from models.exchange import Exchange
 from models.currency import Currency
-from datetime import datetime
 from utils.currency import update_exchange_rates
 
 
@@ -57,7 +56,6 @@ def seed_database():
         Account(
             currency_code = "AUD",
             balance = 1000,
-            date_creation = datetime.now(),
             user = users[0]
         ),
             Account(
@@ -65,20 +63,17 @@ def seed_database():
             description = "Buying a new car",
             currency_code = "EUR",
             balance = 3500.76,
-            date_creation = datetime.now(),
             user = users[0]
         ),
             Account(
             currency_code = "USD",
             account_name = "American Trip",
             balance = 597,
-            date_creation = datetime.now(),
             user = users[1]
         ),
             Account(
             currency_code = "USD",
             balance = 300,
-            date_creation = datetime.now(),
             user = users[2]
         )
     ]
@@ -87,25 +82,21 @@ def seed_database():
         Deposit(
             amount = 200,
             description = "Savings",
-            date_time = datetime.now(),
             account = accounts[1]
         ),
         Deposit(
             amount = 1050,
             description = "car",
-            date_time = datetime.now(),
             account = accounts[2]
         ),
         Deposit(
             amount = 200,
             description = "Savings",
-            date_time = datetime.now(),
             account = accounts[0]
         ),
         Deposit(
             amount = 200,
             description = "Savings",
-            date_time = datetime.now(),
             account = accounts[1]
         )
     ]

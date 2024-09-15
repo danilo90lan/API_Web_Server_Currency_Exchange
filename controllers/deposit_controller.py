@@ -2,7 +2,6 @@ from models.account import Account
 from models.deposit import Deposit, deposit_schema, deposits_schema
 from init import db
 from flask import Blueprint, request, jsonify
-from datetime import datetime
 
 from utils.check_account_user import check_account_user
 
@@ -60,7 +59,6 @@ def deposit_amount(account_id):
     # Create a new deposit record
     new_deposit = Deposit(
         amount = amount,
-        date_time = datetime.now(),
         account = account
     )
     db.session.add(new_deposit)

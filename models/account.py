@@ -1,14 +1,15 @@
 from init import db, ma
 from marshmallow import fields
+from marshmallow.validate import Length
 from sqlalchemy import func
 
 
 class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
-    account_name = db.Column(db.String, default="SAVINGS")
+    account_name = db.Column(db.String, default="FUNDS")
     description = db.Column(db.String)
-    balance = db.Column(db.Numeric(precision=10, scale=2))
+    balance = db.Column(db.Numeric(precision=10, scale=2), default=0)
     date_creation = db.Column(db.DateTime, default=func.now())
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
@@ -23,8 +24,11 @@ class Account(db.Model):
 class AccountSchema(ma.Schema):
     user = fields.Nested("UserSchema", only=["user_id", "name"])
     currency = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
+
+    # Validation
+    account_name = fields.String(validate=Length(min=4, error="Title must be at least 4 characthers in length."))
     class Meta:
-        fields = ("account_id", "account_name", "currency", "balance", "description", "date_creation", "currency", "user")
+        fields = ("account_id", "account_name", "currency_code", "balance", "description", "date_creation", "currency", "user")
         ordered=True
 
 account_schema = AccountSchema()

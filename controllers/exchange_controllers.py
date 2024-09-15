@@ -3,7 +3,6 @@ from models.account import Account
 from models.exchange import Exchange, exchange_schema, exchanges_schema
 from init import db
 from flask import Blueprint, request, jsonify
-from datetime import datetime
 
 from utils.check_account_user import check_account_user
 
@@ -95,8 +94,7 @@ def currency_exchange(account_id, destination_id):
             amount_exchanged = amount_exchanged,
             description = body.get("description"),
             account_origin = account_from,
-            account_destination = account_to,
-            date_time = datetime.today()
+            account_destination = account_to
         )
 
         db.session.add(new_exchange)
