@@ -6,6 +6,8 @@ from sqlalchemy import func
 class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
+    account_name = db.Column(db.String, default="SAVINGS")
+    description = db.Column(db.String)
     balance = db.Column(db.Numeric(precision=10, scale=2))
     date_creation = db.Column(db.DateTime, default=func.now())
 
@@ -20,9 +22,9 @@ class Account(db.Model):
 
 class AccountSchema(ma.Schema):
     user = fields.Nested("UserSchema", only=["user_id", "name"])
-    currency = fields.Nested("CurrencySchema", only=["currency_code", "rate", "base_code"])
+    currency = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
     class Meta:
-        fields = ("account_id", "currency", "balance", "date_creation", "currency", "user")
+        fields = ("account_id", "account_name", "currency", "balance", "description", "date_creation", "currency", "user")
         ordered=True
 
 account_schema = AccountSchema()

@@ -61,6 +61,8 @@ def seed_database():
             user = users[0]
         ),
             Account(
+            account_name = "SAVINGS",
+            description = "Buying a new car",
             currency_code = "EUR",
             balance = 3500.76,
             date_creation = datetime.now(),
@@ -68,6 +70,7 @@ def seed_database():
         ),
             Account(
             currency_code = "USD",
+            account_name = "American Trip",
             balance = 597,
             date_creation = datetime.now(),
             user = users[1]
