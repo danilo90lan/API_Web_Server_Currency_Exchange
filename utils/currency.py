@@ -3,6 +3,7 @@ from models.currency import Currency
 from datetime import datetime
 import requests
 
+
 def get_currencies():
     endpoint = "https://v6.exchangerate-api.com/v6/b12835ecd29b6518d756378d/latest/USD"
     response = requests.get(endpoint)

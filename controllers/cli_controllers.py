@@ -7,7 +7,7 @@ from models.deposit import Deposit
 from models.exchange import Exchange
 from models.currency import Currency
 from datetime import datetime
-from utils.currency_rates import update_exchange_rates
+from utils.currency import update_exchange_rates
 
 
 db_commands = Blueprint("db", __name__)

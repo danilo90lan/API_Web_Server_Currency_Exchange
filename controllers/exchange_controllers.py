@@ -5,7 +5,6 @@ from init import db
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 
-from utils.currency_conversion import convert_currency
 from utils.check_account_user import check_account_user
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -83,11 +82,12 @@ def currency_exchange(account_id, destination_id):
 
             statement = db.select(Currency).filter_by(currency_code=account_to.currency_code)
             currency_to = db.session.scalar(statement)
-            amount_exchanged = convert_currency(amount, currency_from.currency_code, currency_to.currency_code)
+            # convertimg the rates from Currency A to currency B
+            amount_exchanged = (amount / currency_from.rate) * currency_to.rate
         else:
             amount_exchanged = amount
 
-        account_to.balance += int(amount_exchanged)
+        account_to.balance = float(account_to.balance) + amount_exchanged
 
         # create a new instance of Exchange
         new_exchange = Exchange(
