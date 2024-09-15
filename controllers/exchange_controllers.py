@@ -4,6 +4,7 @@ from models.exchange import Exchange, exchange_schema, exchanges_schema
 from init import db
 from flask import Blueprint, request, jsonify
 from datetime import datetime
+
 from utils.currency_conversion import convert_currency
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -19,29 +20,29 @@ exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>/exch
 @exchange_bp.route("/")
 @jwt_required()
 def get_exchanges(account_id):
-    # Get the user_id from JWT identity
-    user_id = get_jwt_identity()
-    # Check if the account belongs to the user
-    statement = db.select(Account).filter(
-        (Account.user_id == user_id) &  #AND operator
-        (Account.account_id==account_id)
-        )
+    # check if the account exists
+    statement = db.select(Account).filter_by(account_id=account_id)
     account = db.session.scalar(statement)
-
     if not account:
-        return jsonify({'error': 'This account doesn NOT belong to the current user'}), 404
+        return {"error":"The account does NOT exist!"}, 404
 
-    # Get exchanges involving this account
-    statement = db.select(Exchange).filter(
-            (Exchange.from_account_id == account_id) | #OR opearator
-            (Exchange.to_account_id == account_id)
-        )
-    exchanges = db.session.scalars(statement)
+    # Get the user_id from JWT identity
+    user_id = int(get_jwt_identity())
+    # Check if the account belongs to the user
+    if account.user_id == user_id:
+        # Get exchanges involving this account
+        statement = db.select(Exchange).filter(
+                (Exchange.from_account_id == account_id) | #OR opearator
+                (Exchange.to_account_id == account_id)
+            )
+        exchanges = db.session.scalars(statement)
 
-    if exchanges==None:
-        return jsonify(exchanges_schema.dump(exchanges))
+        if exchanges==None:
+            return jsonify(exchanges_schema.dump(exchanges))
+        else:
+            return {"message":f"There is NO exchanges operations hsistory for the account {account_id}"}
     else:
-        return {"message":f"There is NO exchanges operations hsistory for the account {account_id}"}
+        return {"error": f"The account {account_id} doesn NOT belong to the current user"}
 
 
 @exchange_bp.route("/transfer/<int:destination_id>", methods=["POST"])

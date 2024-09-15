@@ -12,7 +12,7 @@ deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 @jwt_required()
 def get_deposits(account_id):
     # Get the user_id from JWT identity
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     # Check if the account belongs to the user
     statement = db.select(Account).filter(
         (Account.user_id == user_id) &  #AND operator
@@ -36,7 +36,7 @@ def get_deposits(account_id):
 @jwt_required()
 def deposit_amount(account_id):
     # Get the user_id from JWT identity
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401

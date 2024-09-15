@@ -9,7 +9,7 @@ def get_currencies():
     if response.ok:
         return response.json()
     else:
-        return "The request  failed", response.status_code
+        return "The request failed", response.status_code
 
 
 

@@ -38,7 +38,7 @@ def create_account():
         balance = body.get("balance"),
         currency_code = body.get("currency_code"),
         date_creation = datetime.today(),
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
     )
     db.session.add(account)
     db.session.commit()
@@ -48,7 +48,7 @@ def create_account():
 @jwt_required()
 def delete_Account(account_id):
     # Get the user_id from JWT identity
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     # Check if the account belongs to the user
     statement = db.select(Account).filter(
         (Account.user_id == user_id) &  #AND operator
