@@ -5,8 +5,7 @@ from init import db
 from flask import Blueprint, request, jsonify
 
 from utils.authorization import check_account_user
-
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 

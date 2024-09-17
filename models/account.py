@@ -13,7 +13,7 @@ VALID_CURRENCY_CODES = get_currencies_codes()
 class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
-    account_name = db.Column(db.String, default="FUNDS") # VALIDATED
+    account_name = db.Column(db.String, nullable=False) # VALIDATED
     description = db.Column(db.String)
     balance = db.Column(db.Numeric(precision=10, scale=2), default=0)
     date_creation = db.Column(db.DateTime, default=func.now())
@@ -32,7 +32,7 @@ class AccountSchema(ma.Schema):
     currency = fields.Nested("CurrencySchema")
 
     # Validation
-    account_name = fields.String(validate=Length(min=4, error="Title must be at least 4 characthers in length."))
+    account_name = fields.String(required=True, validate=Length(min=4, error="Title must be at least 4 characthers in length."))
     currency_code = fields.String(validate=OneOf(VALID_CURRENCY_CODES))
 
     @validates("currency_code")

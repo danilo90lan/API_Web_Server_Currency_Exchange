@@ -6,7 +6,7 @@ from models.account import Account
 from models.deposit import Deposit
 from models.exchange import Exchange
 from models.currency import Currency
-from utils.currency import update_exchange_rates
+from utils.currency import seed_currency_table
 
 
 db_commands = Blueprint("db", __name__)
@@ -16,7 +16,7 @@ db_commands = Blueprint("db", __name__)
 def create_tables():
     db.create_all()
     # Initialize currency_table
-    update_exchange_rates()
+    seed_currency_table()
     print("Tables created!")
 
 @db_commands.cli.command("drop")
@@ -54,6 +54,7 @@ def seed_database():
     
     accounts = [
         Account(
+            account_name = "SAVINGS",
             currency_code = "AUD",
             balance = 1000,
             user = users[0]
@@ -66,12 +67,13 @@ def seed_database():
             user = users[0]
         ),
             Account(
+            account_name = "SAVINGS",
             currency_code = "USD",
-            account_name = "American Trip",
             balance = 597,
             user = users[1]
         ),
             Account(
+            account_name = "SAVINGS",
             currency_code = "USD",
             balance = 300,
             user = users[2]

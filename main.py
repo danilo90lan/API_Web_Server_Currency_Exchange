@@ -1,12 +1,18 @@
 import os
 from flask import Flask
 from marshmallow.exceptions import ValidationError
+from datetime import datetime
+import requests
 
 from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
 from controllers.account_controller import account_bp
 from controllers.currency_controller import currency_bp
 from controllers.auth_controller import auth_bp
+
+from utils.currency import update_exchange_rates
+
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 def create_app():
@@ -29,5 +35,11 @@ def create_app():
     app.register_blueprint(account_bp)
     app.register_blueprint(currency_bp)
     app.register_blueprint(auth_bp)
+
    
+    # Start the scheduler
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=update_exchange_rates, trigger="interval", minutes=60, args=[app])
+    scheduler.start()
+
     return app
