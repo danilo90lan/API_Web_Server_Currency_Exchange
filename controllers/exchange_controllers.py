@@ -43,19 +43,17 @@ def currency_exchange(account_id, destination_id):
     # verify if both accounts belong to the current user
     if verify_account_origin==True: 
         if verify_account_destination==True:
-            
-            body = request.get_json()
+
+            body = exchange_schema.load(request.get_json())
             # get the amount to transfer and verify if it's a positive value
             amount = body.get("amount")
-            if amount > 0:
-                statement = db.select(Account).filter_by(account_id=account_id)
-                account_from = db.session.scalar(statement)
-                if account_from.balance >= amount:
-                    account_from.balance -= amount
-                else:
-                    return {"error": f"Insufficient funds in the account {account_from.account_id}."}
+            statement = db.select(Account).filter_by(account_id=account_id)
+            account_from = db.session.scalar(statement)
+            if account_from.balance >= amount:
+                account_from.balance = float(account_from.balance) - amount
             else:
-                return {"error":"Amount MUST be greater than 0"}
+                return {"error": f"Insufficient funds in the account {account_from.account_id}."}
+
         else: return verify_account_destination
     else:
         return verify_account_origin
