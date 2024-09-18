@@ -1,6 +1,6 @@
 from init import db, ma
 from marshmallow import fields, validates
-from marshmallow.validate import Length, OneOf
+from marshmallow.validate import Length, OneOf, And, Regexp
 from marshmallow.exceptions import ValidationError
 
 from sqlalchemy import func

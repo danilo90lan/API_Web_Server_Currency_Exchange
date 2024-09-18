@@ -39,7 +39,7 @@ def create_app():
    
     # Start the scheduler
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=update_exchange_rates, trigger="interval", minutes=60, args=[app])
+    scheduler.add_job(func=update_exchange_rates, trigger="interval", minutes=1, args=[app])
     scheduler.start()
 
     return app
