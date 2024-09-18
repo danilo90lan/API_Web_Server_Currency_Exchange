@@ -34,17 +34,15 @@ def deposit_amount(account_id):
     if verify_account == True:
 
         # Get the deposit amount from the request body
-        body = request.get_json()
+        body = deposit_schema.load(request.get_json())
         amount = body.get('amount')
-        if amount is None:
-            return {"error": "Amount is required"}, 400
         
         # get the account
         statement = db.select(Account).filter_by(account_id=account_id)
         account = db.session.scalar(statement)
 
         # update account's balance
-        account.balance += amount
+        account.balance = float(account.balance) + amount
 
         # Create a new deposit record
         new_deposit = Deposit(
