@@ -1,5 +1,7 @@
 from models.account import Account, accounts_schema, account_schema
 from models.user import User
+from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
 
 from init import db
 from flask import Blueprint, request, jsonify
@@ -55,16 +57,20 @@ def get_accounts():
 @jwt_required()
 def create_account():
     body = account_schema.load(request.get_json())
-    account = Account(
-        account_name = body.get("account_name"),
-        description = body.get("description"),
-        balance = body.get("balance"),
-        currency_code = body.get("currency_code"),
-        user_id = int(get_jwt_identity())
-    )
-    db.session.add(account)
-    db.session.commit()
-    return {"SUCCESS":account_schema.dump(account)}
+    try:
+        account = Account(
+            account_name = body.get("account_name"),
+            description = body.get("description"),
+            balance = body.get("balance"),
+            currency_code = body.get("currency_code"),
+            user_id = int(get_jwt_identity())
+        )
+        db.session.add(account)
+        db.session.commit()
+        return {"SUCCESS":account_schema.dump(account)}
+    except IntegrityError as err:
+        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
+            return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
 
 @account_bp.route("/<int:account_id>", methods=["PATCH"])
 @jwt_required()
@@ -81,8 +87,9 @@ def update_account(account_id):
             db.session.commit()
             return jsonify({"message": "Account info updated successfully!"}, account_schema.dump(account))
         else:
-            return verify_account
-
+            return {"error": f"Account {account_id} does NOT exist!"}
+    else:
+        return verify_account
 
 
 @account_bp.route("/<int:account_id>", methods=["DELETE"])

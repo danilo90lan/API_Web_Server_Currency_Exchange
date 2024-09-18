@@ -13,7 +13,7 @@ class User(db.Model):
     accounts = db.relationship("Account", back_populates="user")
 
 class UserSchema(ma.Schema):
-     accounts = fields.List(fields.Nested("AccountSchema", exclude=["user"]))
+     accounts = fields.List(fields.Nested("AccountSchema", only=["account_id", "account_name", "currency_code"]))
      class Meta:
         fields = ("user_id", "name", "email", "password", "is_admin", "accounts")
 

@@ -1,6 +1,6 @@
 from init import db, ma
 from marshmallow import fields, validates
-from marshmallow.validate import Length, OneOf, And, Regexp
+from marshmallow.validate import Length, OneOf, And, Regexp, Range
 from marshmallow.exceptions import ValidationError
 
 from sqlalchemy import func
@@ -13,9 +13,9 @@ VALID_CURRENCY_CODES = get_currencies_codes()
 class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
-    account_name = db.Column(db.String, nullable=False) # VALIDATED
-    description = db.Column(db.String)
-    balance = db.Column(db.Numeric(precision=10, scale=2), default=0)
+    account_name = db.Column(db.String(20), nullable=False) # VALIDATED
+    description = db.Column(db.String)  # VALIDATED
+    balance = db.Column(db.Numeric(precision=10, scale=2), default=0) # VALIDATED
     date_creation = db.Column(db.DateTime, default=func.now())
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
@@ -32,8 +32,16 @@ class AccountSchema(ma.Schema):
     currency = fields.Nested("CurrencySchema")
 
     # Validation
-    account_name = fields.String(required=True, validate=Length(min=4, error="Title must be at least 4 characthers in length."))
-    currency_code = fields.String(validate=OneOf(VALID_CURRENCY_CODES))
+    account_name = fields.String(required=True, validate=Regexp("^[A-Za-z0-9]{4,20}$", 
+                                                                error="Title must be between 4 and 20 characters in length and contain alphanumeric characters only!"))
+    
+    description = fields.String(required=True, validate=Regexp("^[A-Za-z0-9 ]{10,100}$", 
+                                                               error="Description must be between 10 and 100 characters, and contain only alphanumeric characters and spaces."))
+    
+    currency_code = fields.String(validate=And(Regexp("^[A-Z]{3}$", error="Currency code must be Upper-case and exactly 3 characters in length."),
+                                               OneOf(VALID_CURRENCY_CODES)))
+    
+    balance = fields.Float(validate=Range(min=0, error="Balance cannot be negative."))
 
     @validates("currency_code")
     def validates_status(self, value):
