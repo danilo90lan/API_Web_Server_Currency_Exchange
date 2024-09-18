@@ -15,10 +15,10 @@ def seed_currency_table():
     list_currency = []
     currency = get_currencies()
     # Prepare the values for insertion as Currency objects
-    for i, j in currency["conversion_rates"].items():
+    for code, rate in currency["conversion_rates"].items():
         currency_obj = Currency(
-            currency_code=i,
-            rate=j,
+            currency_code=code,
+            rate=rate,
             base_code=currency["base_code"]
         )
         list_currency.append(currency_obj)

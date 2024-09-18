@@ -1,6 +1,6 @@
 from init import db, ma
 from marshmallow import fields, validates
-from marshmallow.validate import Length, OneOf, And, Regexp, Range
+from marshmallow.validate import OneOf, And, Regexp, Range
 from marshmallow.exceptions import ValidationError
 
 from sqlalchemy import func
@@ -14,7 +14,7 @@ class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
     account_name = db.Column(db.String(20), nullable=False) # VALIDATED
-    description = db.Column(db.String)  # VALIDATED
+    description = db.Column(db.String(100))  # VALIDATED
     balance = db.Column(db.Numeric(precision=10, scale=2), default=0) # VALIDATED
     date_creation = db.Column(db.DateTime, default=func.now())
 

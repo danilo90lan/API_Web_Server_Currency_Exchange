@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from flask import Blueprint, jsonify, request
 
-from models.user import User, user_schema, users_schema
+from models.user import User, user_schema, users_schema, user_schema_validation
 from init import bcrypt, db
 
 from sqlalchemy.exc import IntegrityError
@@ -29,7 +29,7 @@ def get_all_users():
 @auth_bp.route("/register", methods=["POST"])
 def register_user():
     try:
-        body = request.get_json()
+        body = user_schema_validation.load(request.get_json())
         password = body.get("password")
         
         # Create an instance of the User Model
@@ -74,7 +74,7 @@ def login():
 @auth_bp.route("/users", methods=["PUT", "PATCH"])
 @jwt_required()
 def update_user():
-    body = request.get_json()
+    body = user_schema_validation.load(request.get_json(), partial=True)
     password = body.get("password")
     # fetch the user from the db
     statement = db.select(User).filter_by(user_id=get_jwt_identity())
