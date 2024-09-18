@@ -38,12 +38,13 @@ def currency_exchange(account_id, destination_id):
     if account_id == destination_id:
         return {"error":"Cannot transfer funds to the same account. Please select a different account."}
     
-    body = request.get_json()
     verify_account_origin = check_account_user(account_id)
     verify_account_destination = check_account_user(destination_id)
     # verify if both accounts belong to the current user
     if verify_account_origin==True: 
         if verify_account_destination==True:
+            
+            body = request.get_json()
             # get the amount to transfer and verify if it's a positive value
             amount = body.get("amount")
             if amount > 0:

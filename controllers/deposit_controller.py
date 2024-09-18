@@ -30,39 +30,32 @@ def get_deposits(account_id):
 @deposit_bp.route("/deposit", methods=["POST"])
 @jwt_required()
 def deposit_amount(account_id):
-    # Get the user_id from JWT identity
-    user_id = int(get_jwt_identity())
-    
-    if not user_id:
-        return jsonify({"error": "User not authenticated"}), 401
+    verify_account = check_account_user(account_id)
+    if verify_account == True:
 
-    # Check if the account belongs to the user
-    statement = db.select(Account).filter(
-        (Account.user_id == user_id) &
-        (Account.account_id == account_id)
-    )
-    account = db.session.scalar(statement)
+        # Get the deposit amount from the request body
+        body = request.get_json()
+        amount = body.get('amount')
+        if amount is None:
+            return {"error": "Amount is required"}, 400
+        
+        # get the account
+        statement = db.select(Account).filter_by(account_id=account_id)
+        account = db.session.scalar(statement)
 
-    if not account:
-        return jsonify({"error": "This account does NOT belong to the current user"}), 404
+        # update account's balance
+        account.balance += amount
 
-    # Get the deposit amount from the request body
-    body = request.get_json()
-    amount = body.get('amount')
-    
-    if amount is None:
-        return jsonify({"error": "Amount is required"}), 400
+        # Create a new deposit record
+        new_deposit = Deposit(
+            amount = amount,
+            description = body.get("description"),
+            account = account
+        )
+        db.session.add(new_deposit)
+        db.session.commit()
 
-    # update account's balance
-    account.balance += amount
-
-    # Create a new deposit record
-    new_deposit = Deposit(
-        amount = amount,
-        account = account
-    )
-    db.session.add(new_deposit)
-    db.session.commit()
-
-    # Return the newly created deposit
-    return jsonify(deposit_schema.dump(new_deposit)), 201
+        # Return the newly created deposit
+        return jsonify(deposit_schema.dump(new_deposit)), 201
+    else:
+        return verify_account

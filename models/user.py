@@ -8,7 +8,7 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), nullable=False)     # VALIDATED
     email = db.Column(db.String, nullable=False, unique=True)      # VALIDATED
-    password = db.Column(db.String(20), nullable=False)     # VALIDATED
+    password = db.Column(db.String, nullable=False)     # VALIDATED
     is_admin = db.Column(db.Boolean, default=False)
 
     accounts = db.relationship("Account", back_populates="user")
