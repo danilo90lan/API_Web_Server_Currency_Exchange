@@ -62,14 +62,18 @@ def login():
     user = db.session.scalar(statement)
 
     if not user:
-        return {"error":"the email does NOT exit!"}
-
-    if bcrypt.check_password_hash(user.password, body.get("password")):
-        token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=1))
-        return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
+        return {"error":"the email does NOT exit!"}, 400
+    
+    password = body.get("password")
+    if password:
+        if bcrypt.check_password_hash(user.password, password):
+            token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=1))
+            return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
+        else:
+            # Respond back with an error message
+            return {"error": "Invalid password"}, 400
     else:
-        # Respond back with an error message
-        return {"error": "Invalid email or password"}, 400
+        return {"error":"Enter a valid password"}, 400
     
 @auth_bp.route("/users", methods=["PUT", "PATCH"])
 @jwt_required()
@@ -89,4 +93,3 @@ def update_user():
         return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
     else:
         return {"error":f"User {get_jwt_identity()} does NOT exist"}
-
