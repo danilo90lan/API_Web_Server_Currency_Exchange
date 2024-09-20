@@ -24,9 +24,9 @@ class ExchangeSchema(ma.Schema):
     account_origin = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
     account_destination = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
 
-    amount = fields.Float(validate=Range(min=1, error="Amount must be greater than 0."))
+    amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))
 
-    description = fields.String(required=True, validate=Regexp("^[A-Za-z0-9 ]{10,100}$", 
+    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{10,100}$", 
                                                                error="Description must be between 10 and 100 characters, and contain only alphanumeric characters and spaces."))
 
     class Meta:

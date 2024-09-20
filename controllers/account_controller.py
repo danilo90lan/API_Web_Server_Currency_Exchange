@@ -1,6 +1,6 @@
 from models.account import Account, accounts_schema, account_schema
 from models.user import User
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
 
 from init import db
@@ -42,7 +42,8 @@ def count_accounts_grouped_by_user():
             result.append(record)
         return jsonify(result)
     else:
-        return {"error": "Not authorized to perform this action!"}
+        return {"error": "Not authorized to perform this action!"}, 403
+
 
 # get accounts that belong to the current user
 @account_bp.route("/")
@@ -50,7 +51,21 @@ def count_accounts_grouped_by_user():
 def get_accounts():
     statement = db.select(Account).filter_by(user_id=get_jwt_identity())
     accounts = db.session.scalars(statement)
-    return accounts_schema.dump(accounts)
+    return jsonify(accounts_schema.dump(accounts))
+
+
+# get a specific account info
+@account_bp.route("/<int:account_id>")
+@jwt_required()
+def get_account(account_id):
+    verify_account = check_account_user(account_id)
+    if verify_account == True:
+        statement = db.select(Account).filter_by(account_id=account_id)
+        account = db.session.scalar(statement)
+        return jsonify(account_schema.dump(account))
+    else:
+        return verify_account
+
 
 # Adding a new account
 @account_bp.route("/", methods=["POST"])
@@ -66,11 +81,17 @@ def create_account():
             user_id = int(get_jwt_identity())
         )
         db.session.add(account)
-        db.session.commit()
-        return {"SUCCESS":account_schema.dump(account)}
+        try:
+            db.session.commit()
+            return jsonify({"SUCCESS":account_schema.dump(account)})
+        except SQLAlchemyError as e:
+                db.session.rollback()
+                return {"error": f"Database operation failed {e}"}, 500
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
+        else:
+            return {"error": "Database integrity error"}, 500
 
 @account_bp.route("/<int:account_id>", methods=["PATCH"])
 @jwt_required()
@@ -83,9 +104,12 @@ def update_account(account_id):
             body = account_schema.load(request.get_json(), partial=True)
             account.account_name = body.get("account_name") or account.account_name
             account.description = body.get("description") or account.description
-
-            db.session.commit()
-            return jsonify({"message": "Account info updated successfully!"}, account_schema.dump(account))
+            try:
+                db.session.commit()
+                return jsonify({"message": "Account info updated successfully!"}, account_schema.dump(account))
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                return {"error": f"Database operation failed {e}"}, 500
         else:
             return {"error": f"Account {account_id} does NOT exist!"}
     else:
@@ -102,8 +126,13 @@ def delete_Account(account_id):
         
         if account.balance == 0:
             db.session.delete(account)
-            db.session.commit()
-            return {"success":f"The account {account_id} has been succesfully DELETED"}
+            try:
+                db.session.commit()
+                return {"success":f"The account {account_id} has been succesfully DELETED"}
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                return {"error": f"Database operation failed {e}"}, 500
+
         else:
             return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
     else:
