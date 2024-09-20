@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, request
 from models.user import User, user_schema, users_schema, user_schema_validation
 from init import bcrypt, db
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -40,8 +40,12 @@ def register_user():
         )
         # Add and commit to the DB
         db.session.add(user)
-        db.session.commit()
-        return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
+        try:
+            db.session.commit()
+            return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
+        except SQLAlchemyError as e:
+                db.session.rollback()
+                return {"error": f"Database operation failed {e}"}, 500
     
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
@@ -88,8 +92,11 @@ def update_user():
         user.name = body.get("name") or user.name
         if password:
             user.password = bcrypt.generate_password_hash(password).decode("utf-8")
-
-        db.session.commit()
-        return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
+        try:
+            db.session.commit()
+            return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": f"Database operation failed {e}"}, 500
     else:
         return {"error":f"User {get_jwt_identity()} does NOT exist"}

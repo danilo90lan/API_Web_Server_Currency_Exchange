@@ -8,6 +8,8 @@ from models.exchange import Exchange
 from models.currency import Currency
 from utils.currency import seed_currency_table
 
+from sqlalchemy.exc import SQLAlchemyError
+
 
 db_commands = Blueprint("db", __name__)
 
@@ -113,6 +115,6 @@ def seed_database():
     try:
         db.session.commit()
         print("Tables seeded!")
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        print(f"An error occurred: {e}")
+        return {"error": f"Database operation failed {e}"}, 500

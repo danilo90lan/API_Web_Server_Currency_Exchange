@@ -28,6 +28,10 @@ def create_app():
     def validation_error(err):
         return {"error": err.messages}, 400
     
+    @app.errorhandler(500)
+    def server_error(err):
+        return {"error": f"Database operation failed {err}"}, 500
+    
     # register blueprints
     app.register_blueprint(db_commands)
     app.register_blueprint(account_bp)

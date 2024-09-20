@@ -44,7 +44,7 @@ class AccountSchema(ma.Schema):
     balance = fields.Float(validate=Range(min=0, error="Balance cannot be negative."))
 
     @validates("currency_code")
-    def validates_status(self, currency_code):
+    def validates_currency_code(self, currency_code):
         # retrieve the user_id
         user_id = get_jwt_identity()
         # Check if there's an existing account with the same currency_code for this user
@@ -54,7 +54,6 @@ class AccountSchema(ma.Schema):
         .filter(Account.currency_code == currency_code, Account.user_id == user_id)
         .first()
     ) 
-        # Check if an account with the same currency_code already exists
         if existing_account:
             raise ValidationError(f"An account with the currency {currency_code} already exists for the user {user_id}")
 

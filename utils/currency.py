@@ -1,7 +1,8 @@
 from init import db
-from models.currency import Currency
 import requests
+from models.currency import Currency
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 
 def get_currencies():
     endpoint = "https://v6.exchangerate-api.com/v6/b12835ecd29b6518d756378d/latest/USD"
@@ -24,30 +25,31 @@ def seed_currency_table():
         list_currency.append(currency_obj)
 
     # Add all Currency objects to the session
+    db.session.add_all(list_currency)
     try:
-        db.session.add_all(list_currency)
         db.session.commit()
         print("Currencies seeded successfully!")
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        print(f"Error seeding currencies: {e}")
+        return {"error": f"Database operation failed {e}"}, 500
+
 
 def update_exchange_rates(app):
     with app.app_context():
         currency = get_currencies()
+        # Loop through the currency data and update the corresponding rows
+        for code, rate in currency["conversion_rates"].items():
+            # Update only the existing records
+            db.session.query(Currency).filter_by(currency_code=code).update({
+                "rate": rate,
+                "last_update": func.now()
+            })
         try:
-            # Loop through the currency data and update the corresponding rows
-            for code, rate in currency["conversion_rates"].items():
-                # Update only the existing records
-                db.session.query(Currency).filter_by(currency_code=code).update({
-                    "rate": rate,
-                    "last_update": func.now()
-                })
             db.session.commit()
             print("Currencies updated successfully!")
-        except Exception as e:
+        except SQLAlchemyError as e:
             db.session.rollback()
-            print(f"Error updating currencies: {e}")
+            return {"error": f"Database operation failed {e}"}, 500
 
 def get_currencies_codes():
     currency = get_currencies()

@@ -1,6 +1,7 @@
 from init import db, ma
-from marshmallow import fields
+from marshmallow import fields, validates
 from marshmallow.validate import Length, And, Regexp, Email
+from marshmallow.exceptions import ValidationError
 
 class User(db.Model):
     __tablename__ = "users"
@@ -25,6 +26,16 @@ class UserSchema(ma.Schema):
                                                     error="Password must contain at least one uppercase letter, one lowercase letter, and one digit, without special characters.")))
 
     email = fields.String(required=True, validate=Email(error="Invalid email address format."))
+
+    @validates("email")
+    def validates_user_email(self, email):
+        # check if the email already exist into the database
+        statement = db.select(User).filter_by(email=email)
+        existing_email = db.session.scalar(statement)
+        
+        if existing_email:
+            raise ValidationError("Email is already registered, enter a different email")  # HTTP 409 Conflict
+
 
     class Meta:
         fields = ("user_id", "name", "email", "password", "is_admin", "accounts")

@@ -7,6 +7,8 @@ from flask import Blueprint, request, jsonify
 from utils.authorization import check_account_user
 from flask_jwt_extended import jwt_required
 
+from sqlalchemy.exc import SQLAlchemyError
+
 exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 
 
@@ -85,8 +87,11 @@ def currency_exchange(account_id, destination_id):
         account_origin = account_from,
         account_destination = account_to
     )
-
     db.session.add(new_exchange)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return {"error": f"Database operation failed {e}"}, 500
     return jsonify(exchange_schema.dump(new_exchange))
     

@@ -5,7 +5,8 @@ from flask import Blueprint, request, jsonify
 
 from utils.authorization import check_account_user
 
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
+from sqlalchemy.exc import SQLAlchemyError
 
 deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 
@@ -51,7 +52,11 @@ def deposit_amount(account_id):
             account = account
         )
         db.session.add(new_deposit)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": f"Database operation failed {e}"}, 500
 
         # Return the newly created deposit
         return jsonify(deposit_schema.dump(new_deposit)), 201
