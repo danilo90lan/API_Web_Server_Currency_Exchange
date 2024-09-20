@@ -57,14 +57,11 @@ def get_accounts():
 # get a specific account info
 @account_bp.route("/<int:account_id>")
 @jwt_required()
+@check_account_user
 def get_account(account_id):
-    verify_account = check_account_user(account_id)
-    if verify_account == True:
-        statement = db.select(Account).filter_by(account_id=account_id)
-        account = db.session.scalar(statement)
-        return jsonify(account_schema.dump(account))
-    else:
-        return verify_account
+    statement = db.select(Account).filter_by(account_id=account_id)
+    account = db.session.scalar(statement)
+    return jsonify(account_schema.dump(account))
 
 
 # Adding a new account
@@ -95,45 +92,38 @@ def create_account():
 
 @account_bp.route("/<int:account_id>", methods=["PATCH"])
 @jwt_required()
+@check_account_user
 def update_account(account_id):
-    verify_account = check_account_user(account_id)
-    if verify_account == True:
-        statement = db.select(Account).filter_by(account_id=account_id)
-        account = db.session.scalar(statement)
-        if account:
-            body = account_schema.load(request.get_json(), partial=True)
-            account.account_name = body.get("account_name") or account.account_name
-            account.description = body.get("description") or account.description
-            try:
-                db.session.commit()
-                return jsonify({"message": "Account info updated successfully!"}, account_schema.dump(account))
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                return {"error": f"Database operation failed {e}"}, 500
-        else:
-            return {"error": f"Account {account_id} does NOT exist!"}
+    statement = db.select(Account).filter_by(account_id=account_id)
+    account = db.session.scalar(statement)
+    if account:
+        body = account_schema.load(request.get_json(), partial=True)
+        account.account_name = body.get("account_name") or account.account_name
+        account.description = body.get("description") or account.description
+        try:
+            db.session.commit()
+            return jsonify({"message": "Account info updated successfully!"}, account_schema.dump(account))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": f"Database operation failed {e}"}, 500
     else:
-        return verify_account
-
+        return {"error": f"Account {account_id} does NOT exist!"}
 
 @account_bp.route("/<int:account_id>", methods=["DELETE"])
 @jwt_required()
+@check_account_user
 def delete_Account(account_id):
-    verify_account = check_account_user(account_id)
-    if verify_account == True:
-        statement = db.select(Account).filter_by(account_id=account_id)
-        account = db.session.scalar(statement)
-        
-        if account.balance == 0:
-            db.session.delete(account)
-            try:
-                db.session.commit()
-                return {"success":f"The account {account_id} has been succesfully DELETED"}
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                return {"error": f"Database operation failed {e}"}, 500
+    statement = db.select(Account).filter_by(account_id=account_id)
+    account = db.session.scalar(statement)
+    
+    if account.balance == 0:
+        db.session.delete(account)
+        try:
+            db.session.commit()
+            return {"success":f"The account {account_id} has been succesfully DELETED"}
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": f"Database operation failed {e}"}, 500
 
-        else:
-            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
     else:
-        return verify_account
+            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
