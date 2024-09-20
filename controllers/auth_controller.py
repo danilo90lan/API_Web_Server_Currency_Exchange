@@ -90,6 +90,7 @@ def update_user():
     # update the user fields if the user is found in the database
     if user:
         user.name = body.get("name") or user.name
+        user.email = body.get("email") or user.email
         if password:
             user.password = bcrypt.generate_password_hash(password).decode("utf-8")
         try:

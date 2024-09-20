@@ -19,7 +19,7 @@ class UserSchema(ma.Schema):
 
     # Validation
     name = fields.String(required=True, validate=Regexp("^[A-Z][a-z]{2,19}$", 
-                                                    error="User name must be between 3 and 20 characters in length, be capitalized and contain only alphabetic characters."))
+                                                    error="User name must be between 3 and 20 characters in length, be capitalized and contain only alphabetic characters with no space."))
 
     password = fields.String(required=True, validate=And(Length(min=8, max=20, error="Password must be between 8 and 20 characters."),
                                                     Regexp("^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d]+$",
