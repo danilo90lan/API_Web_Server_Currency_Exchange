@@ -8,6 +8,8 @@ from utils.authorization import check_account_user
 from flask_jwt_extended import jwt_required
 
 from sqlalchemy.exc import SQLAlchemyError
+from marshmallow.exceptions import ValidationError
+
 
 exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 
@@ -16,6 +18,7 @@ exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 @jwt_required()
 @check_account_user
 def get_exchanges(account_id):
+    try:
         # Get exchanges involving this account
         statement = db.select(Exchange).filter(
                 (Exchange.from_account_id == account_id) | #OR opearator
@@ -28,6 +31,9 @@ def get_exchanges(account_id):
             return jsonify(exchanges_schema.dump(exchanges))
         else:
             return {"message":f"There is NO exchanges operations history for the account {account_id}"}
+    
+    except SQLAlchemyError as e:
+        return {"error": f"Database operation failed: {e}"}, 500 
 
 
 @exchange_bp.route("/transfer/<int:destination_id>", methods=["POST"])
@@ -37,49 +43,51 @@ def currency_exchange(account_id, destination_id):
     if account_id == destination_id:
         return {"error":"Cannot transfer funds to the same account. Please select a different account."}
     
-    # Both accounts have been validated by the `check_account_user` decorator.
-    body = exchange_schema.load(request.get_json())
-    amount = body.get("amount")
-    statement = db.select(Account).filter_by(account_id=account_id)
-    account_from = db.session.scalar(statement)
-    if account_from.balance >= amount:
-        account_from.balance = float(account_from.balance) - amount
-    else:
-        return {"error": f"Insufficient funds in the account {account_from.account_id}."}
-
-
-    # check if the two accounts have different currency_codes
-    # if different currency_code needs the currency conversion
-    statement = db.select(Account).filter_by(account_id=destination_id)
-    account_to = db.session.scalar(statement)
-    if account_from.currency_code != account_to.currency_code:
-        statement = db.select(Currency).filter_by(currency_code=account_from.currency_code)
-        currency_from = db.session.scalar(statement)
-
-        statement = db.select(Currency).filter_by(currency_code=account_to.currency_code)
-        currency_to = db.session.scalar(statement)
-
-        # converting the rates from Currency A to currency B
-        amount_exchanged = (amount / currency_from.rate) * currency_to.rate
-    else:
-        amount_exchanged = amount
-
-    # update the balance of the destination accont
-    account_to.balance = float(account_to.balance) + amount_exchanged
-
-    # create a new instance of Exchange
-    new_exchange = Exchange(
-        amount = body.get("amount"),
-        amount_exchanged = amount_exchanged,
-        description = body.get("description"),
-        account_origin = account_from,
-        account_destination = account_to
-    )
-    db.session.add(new_exchange)
     try:
+        # Both accounts have been validated by the `check_account_user` decorator.
+        body = exchange_schema.load(request.get_json())
+        amount = body.get("amount")
+        statement = db.select(Account).filter_by(account_id=account_id)
+        account_from = db.session.scalar(statement)
+        if account_from.balance >= amount:
+            account_from.balance = float(account_from.balance) - amount
+        else:
+            return {"error": f"Insufficient funds in the account {account_from.account_id}."}
+
+
+        # check if the two accounts have different currency_codes
+        # if different currency_code needs the currency conversion
+        statement = db.select(Account).filter_by(account_id=destination_id)
+        account_to = db.session.scalar(statement)
+        if account_from.currency_code != account_to.currency_code:
+            statement = db.select(Currency).filter_by(currency_code=account_from.currency_code)
+            currency_from = db.session.scalar(statement)
+
+            statement = db.select(Currency).filter_by(currency_code=account_to.currency_code)
+            currency_to = db.session.scalar(statement)
+
+            # converting the rates from Currency A to currency B
+            amount_exchanged = (amount / currency_from.rate) * currency_to.rate
+        else:
+            amount_exchanged = amount
+
+        # update the balance of the destination accont
+        account_to.balance = float(account_to.balance) + amount_exchanged
+
+        # create a new instance of Exchange
+        new_exchange = Exchange(
+            amount = body.get("amount"),
+            amount_exchanged = amount_exchanged,
+            description = body.get("description"),
+            account_origin = account_from,
+            account_destination = account_to
+        )
+        db.session.add(new_exchange)
+
         db.session.commit()
+        return jsonify(exchange_schema.dump(new_exchange))
+    except ValidationError as ve:
+        return {"error": f"Invalid input: {ve.messages}"}, 400
     except SQLAlchemyError as e:
         db.session.rollback()
-        return {"error": f"Database operation failed {e}"}, 500
-    return jsonify(exchange_schema.dump(new_exchange))
-    
+        return {"error": f"Database operation failed {e}"}, 500    

@@ -44,5 +44,4 @@ def check_account_user(func):
             return func(account_id, destination_id, *args, **kwargs)
         
         return func(account_id, *args, **kwargs)
-    
     return wrapper

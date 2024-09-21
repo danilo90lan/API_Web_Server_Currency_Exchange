@@ -20,11 +20,8 @@ def get_currencies():
         return "The request timed out", 408         # 408 is the HTTP status code for Request Timeout
     except RequestException as req_err:
         return f"Request failed: {req_err}", 500
-    except Exception as e:
-        db.session.rollback()
-        return {"error": f"Unexpected error occurred: {str(e)}"}, 500
     
-    
+
 def seed_currency_table():
     list_currency = []
     currency = get_currencies()
@@ -45,9 +42,6 @@ def seed_currency_table():
     except SQLAlchemyError as e:
         db.session.rollback()
         return {"error": f"Database operation failed {e}"}, 500
-    except Exception as e:
-        db.session.rollback()
-        return {"error": f"Unexpected error occurred: {str(e)}"}, 500
 
 
 def update_exchange_rates(app):
@@ -66,9 +60,6 @@ def update_exchange_rates(app):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
-        except Exception as e:
-            db.session.rollback()
-            return {"error": f"An unexpected error occurred: {str(e)}"}, 500
 
 
 def get_currencies_codes():

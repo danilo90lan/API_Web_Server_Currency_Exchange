@@ -7,6 +7,7 @@ from init import bcrypt, db
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
+from werkzeug.exceptions import Forbidden
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 from utils.authorization import authorize_as_admin
@@ -23,7 +24,7 @@ def get_all_users():
         users = db.session.scalars(statement)
         return jsonify(users_schema.dump(users))
     else:
-        return {"error":"Not authorized to perform this action!"}
+        raise Forbidden("You do not have permission to access this resource.")
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -40,34 +41,34 @@ def register_user():
         )
         # Add and commit to the DB
         db.session.add(user)
-        try:
-            db.session.commit()
-            return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
-        except SQLAlchemyError as e:
-                db.session.rollback()
-                return {"error": f"Database operation failed {e}"}, 500
-    
+        db.session.commit()
+        return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
+ 
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
             # unique violation
-            return {"error": "Email address must be unique"}, 400
+            return {"error": "Email address must be unique"}, 409   # HTTP conflict error
         
     except ValueError as err:
         # Handle the empty password error
         if str(err) == "Password must be non-empty.":
             return {"error": "Password must be non-empty"}, 400
-        
+
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
     body = request.get_json()
-    statement = db.select(User).filter_by(email=body.get("email"))
-    user = db.session.scalar(statement)
+    email = body.get("email")
+    if email:
+        statement = db.select(User).filter_by(email=email)
+        user = db.session.scalar(statement)
+        if not user:
+            return {"error":"the email does NOT exit!"}, 404
+    else:
+        return {"error": "Email is required."}, 400
 
-    if not user:
-        return {"error":"the email does NOT exit!"}, 400
-    
     password = body.get("password")
     if password:
         if bcrypt.check_password_hash(user.password, password):
@@ -75,10 +76,11 @@ def login():
             return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
         else:
             # Respond back with an error message
-            return {"error": "Invalid password"}, 400
+            return {"error": "Invalid password"}, 401   # 401 Unauthorized
     else:
-        return {"error":"Enter a valid password"}, 400
+        return {"error":"Password is required"}, 400
     
+
 @auth_bp.route("/users", methods=["PUT", "PATCH"])
 @jwt_required()
 def update_user():
@@ -100,4 +102,4 @@ def update_user():
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
     else:
-        return {"error":f"User {get_jwt_identity()} does NOT exist"}
+        return {"error":f"User {get_jwt_identity()} does NOT exist"}, 404

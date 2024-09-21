@@ -8,6 +8,8 @@ from controllers.account_controller import account_bp
 from controllers.currency_controller import currency_bp
 from controllers.auth_controller import auth_bp
 
+from werkzeug.exceptions import Forbidden
+
 from utils.currency import update_exchange_rates
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -28,9 +30,18 @@ def create_app():
     def validation_error(err):
         return {"error": err.messages}, 400
     
-    @app.errorhandler(500)
-    def server_error(err):
-        return {"error": f"Database operation failed {err}"}, 500
+    @app.errorhandler(404)
+    def not_found_error(err):
+        return {"error": f"Resource not found. {err}"}, 404
+    
+    @app.errorhandler(Forbidden)
+    def forbidden_error(error):
+        return {"error": error.description}, 403
+    
+    @app.errorhandler(Exception)
+    def handle_general_error(error):
+        return {"error": f"An unexpected error occurred {error}"}, 500
+    
     
     # register blueprints
     app.register_blueprint(db_commands)

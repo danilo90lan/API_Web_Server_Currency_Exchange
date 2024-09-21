@@ -1,7 +1,9 @@
 from models.account import Account, accounts_schema, account_schema
 from models.user import User
+
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
+from werkzeug.exceptions import Forbidden
 
 from init import db
 from flask import Blueprint, request, jsonify
@@ -42,7 +44,7 @@ def count_accounts_grouped_by_user():
             result.append(record)
         return jsonify(result)
     else:
-        return {"error": "Not authorized to perform this action!"}, 403
+        raise Forbidden("You do not have permission to access this resource.")
 
 
 # get accounts that belong to the current user
