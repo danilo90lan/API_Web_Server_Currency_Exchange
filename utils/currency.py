@@ -7,10 +7,10 @@ from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
 def get_currencies():
-    endpoint = "https://v6.exchangerate-api.com/v6/b12835ecd29b6518d756378d/latest/USD"
+    endpoint = "https://openexchangerates.org/api/latest.json?app_id=e73026dfbc164a59a8fb416cc067ca33"
     try:
         response = requests.get(endpoint)
-        # raise an exception if a 4XX or 5XX error occurs
+        # raise an exception if a 400 or 500 error occurs
         response.raise_for_status()
         return response.json()
 
@@ -28,11 +28,11 @@ def seed_currency_table():
     list_currency = []
     currency = get_currencies()
     # Prepare the values for insertion as Currency objects
-    for code, rate in currency["conversion_rates"].items():
+    for code, rate in currency["rates"].items():
         currency_obj = Currency(
             currency_code=code,
             rate=rate,
-            base_code=currency["base_code"]
+            base_code=currency["base"]
         )
         list_currency.append(currency_obj)
 
@@ -54,7 +54,7 @@ def update_exchange_rates(app):
         currency = get_currencies()
         try:
             # Loop through the currency data and update the corresponding rows
-            for code, rate in currency["conversion_rates"].items():
+            for code, rate in currency["rates"].items():
                 # Update only the existing records
                 db.session.query(Currency).filter_by(currency_code=code).update({
                     "rate": rate,
@@ -72,5 +72,8 @@ def update_exchange_rates(app):
 
 def get_currencies_codes():
     currency = get_currencies()
-    list_currency_codes = currency["conversion_rates"].keys()
+    list_currency_codes = currency["rates"].keys()
     return tuple(list_currency_codes)
+
+
+# e73026dfbc164a59a8fb416cc067ca33

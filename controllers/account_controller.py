@@ -37,7 +37,7 @@ def count_accounts_grouped_by_user():
             record = {
                 "user_id": user_id,
                 "name": name,
-                "number of active accounts": count
+                "number of accounts": count
             }
             result.append(record)
         return jsonify(result)
