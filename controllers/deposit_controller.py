@@ -29,6 +29,7 @@ def get_deposits(account_id):
     # else:
     #     return verify_account
 
+
 @deposit_bp.route("/deposit", methods=["POST"])
 @jwt_required()
 @check_account_user

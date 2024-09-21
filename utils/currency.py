@@ -24,6 +24,7 @@ def get_currencies():
         db.session.rollback()
         return {"error": f"Unexpected error occurred: {str(e)}"}, 500
     
+    
 def seed_currency_table():
     list_currency = []
     currency = get_currencies()
@@ -74,6 +75,3 @@ def get_currencies_codes():
     currency = get_currencies()
     list_currency_codes = currency["rates"].keys()
     return tuple(list_currency_codes)
-
-
-# e73026dfbc164a59a8fb416cc067ca33

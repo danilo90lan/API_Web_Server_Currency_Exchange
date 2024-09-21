@@ -32,11 +32,11 @@ class AccountSchema(ma.Schema):
     currency = fields.Nested("CurrencySchema")
 
     # Validation
-    account_name = fields.String(required=True, validate=Regexp("^[A-Za-z0-9]{4,20}$", 
-                                                                error="Title must be between 4 and 20 characters in length and contain alphanumeric characters only!"))
+    account_name = fields.String(required=True, validate=Regexp("^[A-Za-z0-9]{3,20}$", 
+                                                                error="Title must be between 3 and 20 characters in length and contain alphanumeric characters only!"))
     
-    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{10,100}$", 
-                                                               error="Description must be between 10 and 100 characters, and contain only alphanumeric characters and spaces."))
+    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{4,100}$", 
+                                                               error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))
     
     currency_code = fields.String(required=True, validate=And(Regexp("^[A-Z]{3}$", error="Currency code must be Upper-case and exactly 3 characters in length."),
                                                OneOf(VALID_CURRENCY_CODES)))

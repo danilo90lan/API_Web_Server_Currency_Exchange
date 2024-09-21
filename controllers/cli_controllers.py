@@ -17,9 +17,13 @@ db_commands = Blueprint("db", __name__)
 @db_commands.cli.command("create")
 def create_tables():
     db.create_all()
+    print("Tables created")
+
     # Initialize currency_table
-    seed_currency_table()
-    print("Tables created!")
+@db_commands.cli.command("init")
+def init_currencies():
+     seed_currency_table()
+
 
 @db_commands.cli.command("drop")
 def drop_tables():
@@ -34,58 +38,87 @@ def seed_database():
     
     users = [
         User(
-            name="danilo",
-            email="danilo.lann@gmail.com",
-            password=bcrypt.generate_password_hash("1234").decode('utf8'),
+            name="Danilo",
+            email="danilo@gmail.com",
+            password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8'),
             is_admin=True
         ),
 
         User(
-            name="alberto",
+            name="Alberto",
             email="alberto@gmail.com",
-            password=bcrypt.generate_password_hash("1234").decode('utf8'),
+            password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8'),
             is_admin=True
         ),
 
         User(
-            name="marco",
+            name="Marco",
             email="marco@gmail.com",
-            password=bcrypt.generate_password_hash("1234").decode('utf8')
+            password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8')
+        ),
+
+        User(
+             name="Sam",
+             email="sam@gmail.com",
+             password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8')
         )
     ]
     
     accounts = [
         Account(
-            account_name = "SAVINGS",
+            account_name = "savings",
             currency_code = "AUD",
-            balance = 1000,
+            balance = 2000,
             user = users[0]
         ),
-            Account(
-            account_name = "SAVINGS",
+        Account(
+            account_name = "travel",
             description = "Buying a new car",
             currency_code = "EUR",
-            balance = 3500.76,
+            balance = 3500,
             user = users[0]
         ),
-            Account(
-            account_name = "SAVINGS",
+        Account(
+            account_name = "car",
             currency_code = "USD",
             balance = 597,
             user = users[1]
         ),
-            Account(
-            account_name = "SAVINGS",
+        Account(
+            account_name = "travel",
+            currency_code = "JMD",
+            balance = 2000,
+            user = users[1]
+        ),
+        Account(
+            account_name = "europe-trip",
+            currency_code = "EUR",
+            balance = 1000,
+            user = users[2]
+        ),
+        Account(
+            account_name = "savings",
+            currency_code = "CAD",
+            balance = 3500,
+            user = users[2]
+        ),
+        Account(
+            account_name = "savings",
             currency_code = "USD",
             balance = 300,
-            user = users[2]
+            user = users[3]
+        ),
+        Account(
+            account_name = "savings",
+            currency_code = "AUD",
+            balance = 2811,
+            user = users[3]
         )
     ]
 
     deposits = [
         Deposit(
             amount = 200,
-            description = "Savings",
             account = accounts[1]
         ),
         Deposit(
@@ -94,16 +127,26 @@ def seed_database():
             account = accounts[2]
         ),
         Deposit(
-            amount = 200,
+            amount = 3400,
             description = "Savings",
             account = accounts[0]
         ),
         Deposit(
-            amount = 200,
-            description = "Savings",
-            account = accounts[1]
+            amount = 300,
+            description = "savings",
+            account = accounts[5]
+        ),
+        Deposit(
+            amount = 180,
+            account = accounts[3]
+        ),
+        Deposit(
+            amount = 100,
+            description = "paycheck",
+            account = accounts[3]
         )
     ]
+
 
 
     db.session.add_all(deposits)

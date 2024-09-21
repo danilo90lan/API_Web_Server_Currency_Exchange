@@ -20,8 +20,8 @@ class DepositSchema(ma.Schema):
     # validation
     amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))
 
-    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{10,100}$", 
-                                                               error="Description must be between 10 and 100 characters, and contain only alphanumeric characters and spaces."))
+    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{4,100}$", 
+                                                               error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))
 
 
     class Meta:
