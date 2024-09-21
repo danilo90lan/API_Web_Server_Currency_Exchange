@@ -73,7 +73,7 @@ def create_account():
     body = account_schema.load(request.get_json())
     try:
         account = Account(
-            account_name = body.get("account_name"),
+            account_name = body.get("account_name").capitalize(),
             description = body.get("description"),
             balance = body.get("balance"),
             currency_code = body.get("currency_code"),
@@ -100,7 +100,7 @@ def update_account(account_id):
     account = db.session.scalar(statement)
     if account:
         body = account_schema.load(request.get_json(), partial=True)
-        account.account_name = body.get("account_name") or account.account_name
+        account.account_name = body.get("account_name").capitalize() or account.account_name
         account.description = body.get("description") or account.description
         try:
             db.session.commit()

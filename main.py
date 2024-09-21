@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from marshmallow.exceptions import ValidationError
+from werkzeug.exceptions import Forbidden
 
 from init import db, ma, bcrypt, jwt
 from controllers.cli_controllers import db_commands
@@ -8,10 +9,7 @@ from controllers.account_controller import account_bp
 from controllers.currency_controller import currency_bp
 from controllers.auth_controller import auth_bp
 
-from werkzeug.exceptions import Forbidden
-
 from utils.currency import update_exchange_rates
-
 from apscheduler.schedulers.background import BackgroundScheduler
 
 

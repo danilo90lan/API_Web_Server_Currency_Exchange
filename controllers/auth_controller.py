@@ -35,7 +35,7 @@ def register_user():
         
         # Create an instance of the User Model
         user = User(
-            name = body.get("name"),
+            name = body.get("name").capitalize(),
             email = body.get("email"),
             password = bcrypt.generate_password_hash(password).decode("utf-8")
         )
@@ -91,7 +91,7 @@ def update_user():
     user = db.session.scalar(statement)
     # update the user fields if the user is found in the database
     if user:
-        user.name = body.get("name") or user.name
+        user.name = body.get("name").capitalize() or user.name
         user.email = body.get("email") or user.email
         if password:
             user.password = bcrypt.generate_password_hash(password).decode("utf-8")
