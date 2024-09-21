@@ -49,7 +49,7 @@ def register_user():
             return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
             # unique violation
-            return {"error": "Email address must be unique"}, 409   # HTTP conflict error
+            return {"error": "Email is already registered in the database. Please enter another email."}, 409   # HTTP conflict error
         
     except ValueError as err:
         # Handle the empty password error
@@ -86,20 +86,28 @@ def login():
 def update_user():
     body = user_schema_validation.load(request.get_json(), partial=True)
     password = body.get("password")
+    user_id = get_jwt_identity()
     # fetch the user from the db
-    statement = db.select(User).filter_by(user_id=get_jwt_identity())
+    statement = db.select(User).filter_by(user_id=user_id)
     user = db.session.scalar(statement)
     # update the user fields if the user is found in the database
     if user:
-        user.name = body.get("name").capitalize() or user.name
-        user.email = body.get("email") or user.email
-        if password:
-            user.password = bcrypt.generate_password_hash(password).decode("utf-8")
         try:
+            user.name = body.get("name") or user.name
+            user.email = body.get("email") or user.email
+            if password:
+                user.password = bcrypt.generate_password_hash(password).decode("utf-8")
+
             db.session.commit()
             return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
+        except IntegrityError as err:
+            if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
+                return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
+            if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
+                # unique violation
+                return {"error": "Email is already registered in the database. Please enter another email."}, 409 
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
     else:
-        return {"error":f"User {get_jwt_identity()} does NOT exist"}, 404
+        return {"error":f"User {user_id} does NOT exist"}, 404
