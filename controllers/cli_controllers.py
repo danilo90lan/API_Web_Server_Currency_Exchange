@@ -18,11 +18,8 @@ db_commands = Blueprint("db", __name__)
 def create_tables():
     db.create_all()
     print("Tables created")
-
     # Initialize currency_table
-@db_commands.cli.command("init")
-def init_currencies():
-     seed_currency_table()
+    seed_currency_table()
 
 
 @db_commands.cli.command("drop")

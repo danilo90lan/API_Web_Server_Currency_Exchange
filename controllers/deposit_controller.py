@@ -13,14 +13,23 @@ from marshmallow.exceptions import ValidationError
 deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 
 @deposit_bp.route("/deposit-history")
-@jwt_required()
-@check_account_user
+@jwt_required()         # Ensure the user is authenticated
+@check_account_user     # Verify the account belongs to the current user
 def get_deposits(account_id):
+    """
+    Retrieves the deposit history for a specific account_id.
+    Ensures that the account belongs to the authenticated user.
+    """
     try:
+        # SELECT *
+        # FROM Deposit
+        # WHERE account_id = (account_id)
+        # ORDER BY date_time DESC;
         statement = db.select(Deposit).filter((Deposit.account_id == account_id)).order_by(Deposit.date_time.desc())
         result = db.session.execute(statement)
-        deposits = result.scalars().all()  # Convert to a list in order to check if the list is empty
+        deposits = result.scalars().all()
 
+        # Check if the deposit list is empty
         if deposits:
             return jsonify(deposits_schema.dump(deposits))
         else:
@@ -31,15 +40,22 @@ def get_deposits(account_id):
 
 
 @deposit_bp.route("/deposit", methods=["POST"])
-@jwt_required()
-@check_account_user
+@jwt_required()             # Ensure the user is authenticated
+@check_account_user         # Verify the account belongs to the current user
 def deposit_amount(account_id):
+    """
+    Handles depositing an amount into the specified account.
+    Creates a new deposit record and updates the account balance of the involved account.
+    """
+
     try:
-        # Get the deposit amount from the request body
+        # Get the deposit amount from the request body already validated (balance > 0)
         body = deposit_schema.load(request.get_json())
         amount = body.get("amount")
         
-        # get the account
+        # SELECT *
+        # FROM Account
+        # WHERE account_id = (account_id);
         statement = db.select(Account).filter_by(account_id=account_id)
         account = db.session.scalar(statement)
 

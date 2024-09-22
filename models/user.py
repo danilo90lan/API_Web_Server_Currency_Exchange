@@ -18,7 +18,7 @@ class UserSchema(ma.Schema):
     accounts = fields.List(fields.Nested("AccountSchema", only=["account_id", "account_name", "currency_code"]))
 
     # Validation
-    name = fields.String(required=True, validate=Regexp("^[A-Za-z]{2,19}$", 
+    name = fields.String(required=True, validate=Regexp("^[A-Za-z]{3,20}$", 
                                                     error="User name must be between 3 and 20 characters in length and contain only alphabetic characters with no space."))
 
     password = fields.String(required=True, validate=And(Length(min=8, max=20, error="Password must be between 8 and 20 characters."),
