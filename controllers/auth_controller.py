@@ -72,7 +72,7 @@ def login():
     password = body.get("password")
     if password:
         if bcrypt.check_password_hash(user.password, password):
-            token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=1))
+            token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=10))
             return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
         else:
             # Respond back with an error message

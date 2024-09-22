@@ -21,8 +21,8 @@ class Exchange(db.Model):
 
 
 class ExchangeSchema(ma.Schema):
-    account_origin = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
-    account_destination = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
+    account_origin = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])
+    account_destination = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])
 
     amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))
 

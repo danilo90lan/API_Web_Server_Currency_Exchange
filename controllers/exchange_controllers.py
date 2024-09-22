@@ -23,7 +23,8 @@ def get_exchanges(account_id):
         statement = db.select(Exchange).filter(
                 (Exchange.from_account_id == account_id) | #OR opearator
                 (Exchange.to_account_id == account_id)
-            )
+            ).order_by(Exchange.date_time.desc())  # Order by date_time in descending order
+        
         result = db.session.execute(statement)
         exchanges = result.scalars().all()  # Convert to a list in order to check if the list is empty
 
@@ -53,7 +54,6 @@ def currency_exchange(account_id, destination_id):
             account_from.balance = float(account_from.balance) - amount
         else:
             return {"error": f"Insufficient funds in the account {account_from.account_id}."}
-
 
         # check if the two accounts have different currency_codes
         # if different currency_code needs the currency conversion

@@ -28,8 +28,8 @@ class Account(db.Model):
     exchange_to = db.relationship("Exchange", foreign_keys='Exchange.to_account_id', back_populates="account_destination")
 
 class AccountSchema(ma.Schema):
-    user = fields.Nested("UserSchema", only=["user_id", "name", "email"])
-    currency = fields.Nested("CurrencySchema")
+    user = fields.Nested("UserSchema", only=["user_id", "name"])
+    currency = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
 
     # Validation
     account_name = fields.String(required=True, validate=Regexp("^[A-Za-z0-9]{3,20}$", 
