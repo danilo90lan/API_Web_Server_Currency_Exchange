@@ -17,7 +17,7 @@ deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 @check_account_user
 def get_deposits(account_id):
     try:
-        statement = db.select(Deposit).filter((Deposit.account_id == account_id))
+        statement = db.select(Deposit).filter((Deposit.account_id == account_id)).order_by(Deposit.date_time.desc())
         result = db.session.execute(statement)
         deposits = result.scalars().all()  # Convert to a list in order to check if the list is empty
 

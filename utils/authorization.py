@@ -25,22 +25,12 @@ def check_account_user(func):
     def wrapper(account_id, *args, **kwargs):
         # Get the user_id from the JWT
         user_id = int(get_jwt_identity())
-        
         # Check if the origin account belongs to the current user
         origin_account = db.session.scalar(db.select(Account).filter_by(account_id=account_id))
         if not origin_account:
             return {"error": f"The account ID {account_id} does NOT exist!"}, 404
         if origin_account.user_id != user_id:
             return {"error": f"The account ID {account_id} does NOT belong to the current user!"}, 403
-        
-        # # If a destination account ID is provided, check if it also belongs to the current user
-        # if destination_id:
-        #     destination_account = db.session.scalar(db.select(Account).filter_by(account_id=destination_id))
-        #     if not destination_account:
-        #         return {"error": f"The account ID {destination_id} does NOT exist!"}, 404
-        #     if destination_account.user_id != user_id:
-        #         return {"error": f"The account ID {destination_id} does NOT belong to the current user!"}, 403
-        #     return func(account_id, destination_id, *args, **kwargs)
-        
+
         return func(account_id, *args, **kwargs)
     return wrapper
