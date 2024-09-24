@@ -3,6 +3,7 @@ from datetime import timedelta
 from flask import Blueprint, jsonify, request
 
 from models.user import User, user_schema, users_schema, user_schema_validation
+from models.account import Account, accounts_schema
 from init import bcrypt, db
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -157,3 +158,43 @@ def update_user():
     else:
         # Return an error if the user does not exist
         return {"error":f"User {user_id} does NOT exist"}, 404
+    
+
+@auth_bp.route("/", methods=["DELETE"])
+@jwt_required()         # Ensure the user is authenticated
+def delete_user():
+    """
+    this function securely deletes the current user
+    only if its accounts have balance=0
+    """
+    user_id = get_jwt_identity()
+
+    # SELECT * 
+    # FROM accounts 
+    # WHERE user_id = (user_id) 
+    # AND balance > 0;
+    statement = db.select(Account).filter(
+        Account.user_id == user_id,
+        Account.balance > 0)
+    
+    account_ids = db.session.scalars(statement).all()
+    if account_ids:
+        accounts_details = []
+        # Iterate through each account with a positive balance
+        for account in account_ids:
+            # Create a dictionary for each account
+            accounts_details.append(account)
+        return {"error": "User cannot be deleted because have accounts with a positive balance.",
+                    "accounts": accounts_schema.dump(accounts_details)}, 400
+    else:
+        statement = db.select(User).filter_by(user_id=user_id)
+        user = db.session.scalar(statement)
+        try:
+            # delete user
+            db.session.delete(user)
+            # commit to the session
+            db.session.commit()
+            return {"success":f"The user has been succesfully DELETED"}
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": f"Database operation failed {e}"}, 500

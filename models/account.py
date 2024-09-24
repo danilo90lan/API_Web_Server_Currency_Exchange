@@ -22,7 +22,7 @@ class Account(db.Model):
     currency_code = db.Column(db.String(3),db.ForeignKey("currencies.currency_code"), nullable=False)  # VALIDATED
     
     user = db.relationship("User", back_populates="accounts")
-    deposits = db.relationship("Deposit", back_populates="account")
+    deposits = db.relationship("Deposit", back_populates="account", cascade="all, delete")
     currency = db.relationship("Currency", back_populates='account')
     exchange_from = db.relationship("Exchange", foreign_keys='Exchange.from_account_id', back_populates="account_origin")
     exchange_to = db.relationship("Exchange", foreign_keys='Exchange.to_account_id', back_populates="account_destination")

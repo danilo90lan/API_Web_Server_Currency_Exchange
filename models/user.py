@@ -12,7 +12,7 @@ class User(db.Model):
     password = db.Column(db.String, nullable=False)     # VALIDATED
     is_admin = db.Column(db.Boolean, default=False)
 
-    accounts = db.relationship("Account", back_populates="user")
+    accounts = db.relationship("Account", back_populates="user", cascade="all, delete")
 
 class UserSchema(ma.Schema):
     accounts = fields.List(fields.Nested("AccountSchema", only=["account_id", "account_name", "currency_code"]))
