@@ -2,7 +2,11 @@
 
 ## Application Overview
 The developed application is a backend API with the sole purpose of facilitating currency exchange and account management more effectively. 
-This application allows users to create multiple accounts, each assigned a unique currency (such as AUD, USD, EUR, GBP, and more). Users can deposit funds into their respective accounts, which hold only the designated currency. Additionally, users have the ability to transfer money between their accounts and to other users' accounts. If the accounts involved have different currencies, the application automatically performs the necessary currency conversions based on current exchange rates. This functionality streamlines financial management and enhances user flexibility.  
+This application allows users to create multiple accounts, each assigned a unique currency (such as AUD, USD, EUR, GBP, and more). Users can deposit funds into their respective accounts, which hold only the designated currency. Additionally, users have the ability to transfer money between their accounts and to other users' accounts. If the accounts involved have different currencies, the application automatically performs the necessary currency conversions based on current exchange rates. 
+## Integration with Third-Party Currency API:
+The application relies on a third-party API (https://openexchangerates.org/) to fetch the most recent currency exchange rates. These rates are stored in a dedicated table within the database. To ensure that exchange rates are always up to date, the application includes a background task scheduled through the APScheduler library, which runs every hour. This task retrieves and updates the currency rates, allowing the system to consistently provide accurate conversions for users during transfers between accounts with different currencies.
+
+By incorporating real-time exchange rates and automating currency conversions, the API enhances financial operations and ensures users always benefit from current exchange rates during their transactions.  
 The features provided include:
 
 ### Account Management:
@@ -384,3 +388,330 @@ class Exchange(db.Model):
 ```
 
 - **Development Efficiency**: Automatic schema creation right out of the box at the start of development pivots the speed to prototype and iterate on a database design. A developer can quickly change their models and immediately see the result in the database sans cumbersome migration steps.
+
+## Project’s models (relationships)
+The project involves several models that have specific relationships with each other.   
+Here's a breakdown of the models and their relationships:
+
+### User and Account (One-to-Many Relationship)
+A user can have multiple accounts, but each account belongs to only one user. This is represented as a one-to-many relationship between User and Account.  
+**user.py**
+``` python
+class User(db.Model):
+    __tablename__ = "users"
+    user_id = db.Column(db.Integer, primary_key=True)
+    # Relationship with account
+    accounts = db.relationship("Account", back_populates="user")
+```
+**account.py**
+``` python
+class Account(db.Model):
+    __tablename__ = "accounts"
+    account_id = db.Column(db.Integer, primary_key=True)
+    # User Foreign key
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    # Relationship with user
+    user = db.relationship("User", back_populates="accounts")
+```
+
+### Account and Deposit (One-to-Many Relationship)
+An account can perform multiple deposits, but each deposit is performed by a single account.  
+**deposit.py**
+``` python
+class Deposit(db.Model):
+    __tablename__ = "deposits"
+    deposit_id = db.Column(db.Integer, primary_key=True)
+    # Account Foreign key
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
+    # Relationship with account
+    account = db.relationship("Account", back_populates="deposits")
+```
+**account.py**
+``` python
+    __tablename__ = "accounts"
+    account_id = db.Column(db.Integer, primary_key=True)
+    # Relationship with deposit
+    deposits = db.relationship("Deposit", back_populates="account")
+```
+
+### Account and Currency (Many-to-One Relationship)
+Each account is associated with only a single currency, but multiple accounts can use the same currency.  
+**account.py**
+``` python
+class Account(db.Model):
+    __tablename__ = "accounts"
+    account_id = db.Column(db.Integer, primary_key=True)
+    # Currency Foreign key
+    currency_code = db.Column(db.String(3), db.ForeignKey("currencies.currency_code"), nullable=False)
+    # Relationship with currency
+    currency = db.relationship("Currency", back_populates='account')
+```
+**currency.py**
+``` python
+class Currency(db.Model):
+    __tablename__ = "currencies"
+    currency_code = db.Column(db.String(3), primary_key=True)
+    # Relationship with account
+    account = db.relationship('Account', back_populates='currency')
+```
+### Account and Currency Validation
+The validation for the currency_code in the AccountSchema ensures that a user cannot have more than one account with the same currency.
+
+``` python
+class AccountSchema(ma.Schema):
+    @validates("currency_code")
+    def validates_currency_code(self, currency_code):
+        user_id = get_jwt_identity()
+        existing_account = (
+            db.session.query(Account)
+            .filter(Account.currency_code == currency_code, Account.user_id == user_id)
+            .first()
+        )
+        if existing_account:
+            raise ValidationError(f"An account with the currency {currency_code} already exists for user {user_id}.")
+```
+
+
+###  Account and Exchange (One-to-Many Self-Referential Relationship)
+An exchange involves transferring currency between two accounts. The Exchange model refers to Account twice, once for the source account (from_account_id) and once for the destination account (to_account_id).  
+Account has two foreign key relationships to the Exchange model:
+
+- exchange_from: All the exchanges where the account is the source account (from_account_id).
+- exchange_to: All the exchanges where the account is the destination account (to_account_id).  
+
+Exchange joins two accounts:
+- from_account_id: The account from which the funds are transferred.
+- to_account_id: The account to which the funds are transferred.
+This design makes it possible for an account to participate in many exchanges as both a sender and receiver.
+
+In the case of self-referential relationships like this, an account can both send and receive exchanges through the Exchange table which acts as the "join" table.
+
+**account.py**
+``` python
+class Account(db.Model):
+    __tablename__ = "accounts"
+    account_id = db.Column(db.Integer, primary_key=True)
+    # Relationship with exchange
+    exchange_from = db.relationship("Exchange", foreign_keys='Exchange.from_account_id', back_populates="account_origin")
+    exchange_to = db.relationship("Exchange", foreign_keys='Exchange.to_account_id', back_populates="account_destination")
+```
+**exchange.py**
+``` python
+class Exchange(db.Model):
+    __tablename__ = "exchanges"
+    exchange_id = db.Column(db.Integer, primary_key=True)
+    
+    # Account Foreign keys
+    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
+    to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
+
+    # Relationship with account
+    account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
+    account_destination = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchange_to")
+```
+To ensure that the Exchange table retains the transaction record when an Account is deleted, the foreign key constraints for both from_account_id and to_account_id in the Exchange table are allowed to store **NULL** values **(ondelete='SET NULL')**. This way, if an account is deleted, the corresponding fields in the Exchange table will be set to NULL, preserving the transaction history.
+
+## Data normalization
+A plan for designing a normalized database focuses on organizing data efficiently, reducing redundancy, and ensuring data integrity. The normalization process typically follows several normal forms (NF), each with specific rules
+Here’s a step-by-step plan for achieving normalized database relations:
+
+### Identify Entities (Tables)
+- **User**: User: Stores information about users (e.g., ID, name, email).
+- **Account**: Tracks user accounts (e.g., ID, balance, currency).
+- **Currency**: Holds currency exchange rates (e.g., code, rate, last update).
+- **Deposit**: Logs deposits made into accounts (e.g., deposit ID, account ID,
+- **Exchange**: Tracks currency exchanges between accounts (e.g., from_account_id, to_account_id, exchange_rate).
+
+### First Normal Form (1NF)
+A table is in 1NF if:
+
+* All columns contain atomic values (no repeating groups or arrays).  
+* Each column contains values of a single type.
+* Each record is unique.  
+
+### Second Normal Form (2NF)
+A table is in 2NF if:
+
+* It is in 1NF.  
+* All non-key attributes are fully functional dependent on the primary key (no partial dependencies).
+
+### Third Normal Form (3NF)
+A table is in 3NF if:
+
+* It is in 2NF.
+* There are no transitive dependencies (non-key attributes should not depend on other non-key attributes).
+
+
+### Normalization Steps:
+
+#### User Table:
+* user_id (Integer, Primary Key) - Unique identifier for each user.
+* name (String, Nullable=False) - Name of the user.
+* email (String, Nullable=False, Unique=True) - Email address of the user, must be unique.
+* password (String, Nullable=False) - Password for the user account.
+* is_admin (Boolean, Default=False) - Indicator of whether the user has admin privileges.
+
+##### 1NF:
+* All attributes (user_id, name, email, password, is_admin) are atomic.
+* The primary key (user_id) ensures that each record is unique.
+
+##### 2NF:
+* All non-key attributes (name, email, password, is_admin) are fully dependent on the primary key (user_id).
+
+##### 3NF:
+* There are no transitive dependencies.
+* name, email, password, and is_admin do not depend on each other and only depend on user_id.
+
+
+#### Account Table:
+* account_id (Primary Key) - Unique identifier for each account.
+* currency_code (Foreign Key referencing Currency.currency_code) - The currency * associated with the account.
+* balance (Decimal) - Current balance of the account.
+* date_creation (DateTime) - The date the account was created.
+* user_id (Foreign Key referencing User.user_id) - The user who owns the account.
+
+##### 1NF:
+* Each attribute is atomic (no repeating groups).
+* The primary key (account_id) ensures that each record is unique.
+
+##### 2NF:
+* All non-key attributes depend on the primary key.
+* currency_id, balance, date_creation, and user_id all depend on account_id.
+
+##### 3NF:
+* There are no transitive dependencies; currency_code, balance, date_creation, and user_id do not depend on each other and only depend on account_id.
+ 
+#### Deposit Table
+* deposit_id (Integer, Primary Key) - Unique identifier for each deposit.
+* amount (Numeric, Nullable=False) - The amount of the deposit.
+* description (String) - A description of the deposit.
+* date_time (DateTime, Default=func.now()) - The date and time when the deposit was made.
+* account_id (Integer, Foreign Key referencing Account.account_id) - The account associated with the deposit.
+
+###### 1NF:
+* All attributes (deposit_id, amount, description, date_time, account_id) are atomic.
+* The primary key (deposit_id) ensures that each record is unique.
+
+##### 2NF:
+* All non-key attributes depend on the primary key (operation_id).
+* account_id, amount, description, and timestamp are all dependent on operation_id.
+
+##### 3NF:
+* There are no transitive dependencies; amount, description, date_time, and account_id do not depend on each other and only depend on deposit_id.
+
+#### Exchange Table
+* exchange_id (Primary Key)
+* from_account_id (Foreign Key referencing Account.account_id)
+* to_account_id (Foreign Key referencing Account.account_id)
+* amount
+* amount_exchanged
+* exchange_rate
+* timestamp
+
+##### 1NF:
+* All attributes are atomic, and exchange_id is unique.
+
+##### 2NF:
+* All non-key attributes depend on the primary key (exchange_id).
+* from_account_id, to_account_id, amount, amount_exchanged, exchange_rate, and timestamp all depend on exchange_id.
+
+##### 3NF:
+* There are no transitive dependencies.
+
+#### Currency Table
+* currency_code (String, Primary Key) - Unique code representing the currency (e.g., USD, EUR).
+* rate (Float, Nullable=False) - Current exchange rate of the currency.
+* base_code (String, Nullable=False) - The base currency code against which the rate is compared.
+* last_update (DateTime, Default=func.now()) - The last time the exchange rate was updated.
+
+##### 1NF:
+* currency_code, rate, base_code, and last_update are all atomic values.
+* The primary key (currency_code) ensures that each record is unique.
+
+##### 2NF:
+* rate, base_code, and last_update are all dependent on the primary key (currency_code).
+
+##### 3NF:
+* rate, base_code, and last_update do not depend on each other; they only depend on currency_code.
+
+### Comparison on how the table Exchange would look like in other levels of normalization.
+
+In the pre-normalized schema, the Exchange table contains redundant currency_code information directly:  
+### Before normalization:
+
+**Exchange:**  
+* exchange_id INT PRIMARY KEY,
+* amount FLOAT,
+* description VARCHAR,
+* from_currency_code CHAR(3),  -- Redundant currency code
+* to_currency_code CHAR(3),    -- Redundant currency code
+* from_account_id FK (REFERENCES accounts(account_id))  
+* to_account_id FK (REFERENCES accounts(account_id))
+* date_time TIMESTAMP
+
+In this schema, from_currency_code and to_currency_code are directly stored in the Exchange table. This redundancy can lead to issues if currency information changes or if it's not synchronized with the Account table.
+
+### After Normalization (3NF):  
+
+**Exchange:**  
+In the normalized schema, the Exchange table does not store currency codes directly. Instead, it references the Account table, which stores the currency information:
+
+* exchange_id INT PRIMARY KEY,
+* amount FLOAT,
+* description VARCHAR,
+* from_account_id FK (REFERENCES accounts(account_id))
+* to_account_id FK (REFERENCES accounts(account_id))
+* date_time TIMESTAMP
+
+In the normalized schema, the currency information is stored in a separate currencies table, which is referenced by the accounts table through the currency_code foreign key. 
+
+**Accounts:**
+* account_id INT PRIMARY KEY,
+* description VARCHAR,
+* balance FLOAT,
+* user_id FK (REFERENCES users(user_id)), -- Reference to accounts table
+* currency_code FK (REFERENCES currencies(currency_code))  -- Reference to currencies table
+
+### Benefits of This Structure
+By introducing the currencies table and referencing it in the accounts table, normalization principles are applied effectively. This structure enhances data integrity and simplifies management, making it a robust design for handling currency exchanges.
+* Reduced Redundancy: Currency codes are only stored in the currencies table, avoiding duplication.
+* Consistency: Changes to currency codes or rates are managed in one place.
+
+
+### Comparison on how the Account table would look like in other levels of normalization.
+
+### Before normalization
+**Account table**
+* account_id INT PRIMARY KEY,
+* currency_code CHAR(3),           -- Redundant currency code
+* balance DECIMAL(10, 2),
+* description VARCHAR(255),         -- Description of the account
+* user_name VARCHAR(255),           -- Redundant user information
+* user_email VARCHAR(255)           -- Redundant user information
+
+The currency_code is redundantly stored in the accounts table.  
+Contains redundant user information such as user_name and user_email, which can lead to data anomalies if user details change.
+
+#### After normalization (3NF)
+
+**Account table**
+* account_id INT PRIMARY KEY,
+* description VARCHAR,
+* balance FLOAT,
+* user_id FK (REFERENCES users(user_id)), -- Reference to users table
+* currency_code FK (REFERENCES currencies(currency_code))  -- Reference to currencies table
+
+**User table**
+* user_id INT PRIMARY KEY,
+* user_name VARCHAR,
+* user_email VARCHAR,
+* password_hash VARCHAR,
+* is_admin BOOL
+
+The currency_code is retained in the accounts table as a foreign key referencing the currencies table. This maintains the relationship without redundancy since the currency_code directly relates to the account.
+The users table is created to store user-related information, ensuring that changes to user information only occur in one place.
+
+### Benefits of This Structure
+* Data Integrity: The foreign key relationships maintain integrity between the accounts, users, and currencies tables.
+* Reduced Redundancy: Currency codes are only stored in the currencies table, but the relationship is established through the accounts table without duplicating data.
+* Consistency: Updates to currency information are managed in one place, ensuring that all accounts reference the correct currency data.

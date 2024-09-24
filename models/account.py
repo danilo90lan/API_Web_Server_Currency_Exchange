@@ -27,6 +27,7 @@ class Account(db.Model):
     exchange_from = db.relationship("Exchange", foreign_keys='Exchange.from_account_id', back_populates="account_origin")
     exchange_to = db.relationship("Exchange", foreign_keys='Exchange.to_account_id', back_populates="account_destination")
 
+
 class AccountSchema(ma.Schema):
     user = fields.Nested("UserSchema", only=["user_id", "name"])
     currency = fields.Nested("CurrencySchema", only=["currency_code", "rate"])
@@ -45,15 +46,27 @@ class AccountSchema(ma.Schema):
 
     @validates("currency_code")
     def validates_currency_code(self, currency_code):
-        # retrieve the user_id
+        """
+        Validate the currency code to ensure that the user
+        does not have another account with the same currency code.
+        """
+
+        # Retrieve the user_id from the JWT
         user_id = get_jwt_identity()
         # Check if there's an existing account with the same currency_code for this user
+        # SELECT Account.*
+        # FROM Account
+        # JOIN User ON Account.user_id = User.user_id
+        # WHERE Account.currency_code = (currency_code) AND Account.user_id = (user_id)
+        # LIMIT 1;
+
         existing_account = (
         db.session.query(Account)
         .join(User, Account.user_id == User.user_id)
         .filter(Account.currency_code == currency_code, Account.user_id == user_id)
-        .first()
+        .first()     # Get the first matching account, if any
     ) 
+        # Raise a validation error if an existing account is found
         if existing_account:
             raise ValidationError(f"An account with the currency {currency_code} already exists for the user {user_id}")
 
