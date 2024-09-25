@@ -27,15 +27,6 @@ class UserSchema(ma.Schema):
 
     email = fields.String(required=True, validate=Email(error="Invalid email address format."))
 
-    # @validates("email")
-    # def validates_user_email(self, email):
-    #     # check if the email already exist into the database
-    #     statement = db.select(User).filter_by(email=email)
-    #     existing_email = db.session.scalar(statement)
-        
-    #     if existing_email:
-    #         raise ValidationError("Email is already registered, enter a different email")  # HTTP 409 Conflict
-
 
     class Meta:
         fields = ("user_id", "name", "email", "password", "is_admin", "accounts")

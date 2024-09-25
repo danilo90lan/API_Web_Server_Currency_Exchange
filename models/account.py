@@ -14,7 +14,6 @@ class Account(db.Model):
     __tablename__ = "accounts"
     account_id = db.Column(db.Integer, primary_key=True)
     account_name = db.Column(db.String(20), nullable=False) # VALIDATED
-    description = db.Column(db.String(100))  # VALIDATED
     balance = db.Column(db.Numeric(precision=10, scale=2), default=0) # VALIDATED
     date_creation = db.Column(db.DateTime, default=func.now())
 
@@ -36,8 +35,6 @@ class AccountSchema(ma.Schema):
     account_name = fields.String(required=True, validate=Regexp("^[A-Za-z0-9]{3,20}$", 
                                                                 error="Title must be between 3 and 20 characters in length and contain alphanumeric characters only!"))
     
-    description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{4,100}$", 
-                                                               error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))
     
     currency_code = fields.String(required=True, validate=And(Regexp("^[A-Z]{3}$", error="Currency code must be Upper-case and exactly 3 characters in length."),
                                                OneOf(VALID_CURRENCY_CODES)))
@@ -71,7 +68,7 @@ class AccountSchema(ma.Schema):
             raise ValidationError(f"An account with the currency {currency_code} already exists for the user {user_id}")
 
     class Meta:
-        fields = ("account_id", "account_name", "balance", "currency_code", "description", "date_creation", "currency", "user")
+        fields = ("account_id", "account_name", "balance", "currency_code", "date_creation", "currency", "user")
         ordered=True
 
 account_schema = AccountSchema()

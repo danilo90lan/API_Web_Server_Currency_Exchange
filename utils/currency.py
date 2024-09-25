@@ -51,7 +51,7 @@ def seed_currency_table():
     db.session.add_all(list_currency)
     try:
         db.session.commit()
-        print("Currencies seeded successfully!")
+        print("Currencies initialized successfully!")
     except SQLAlchemyError as e:
         # Rollback on error
         db.session.rollback()

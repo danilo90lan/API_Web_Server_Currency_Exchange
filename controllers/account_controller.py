@@ -110,7 +110,6 @@ def create_account():
         # Create a new Account object
         account = Account(
             account_name = body.get("account_name").capitalize(),   # Capitalize the account name
-            description = body.get("description"),
             balance = body.get("balance"),
             currency_code = body.get("currency_code"),
             user_id = int(get_jwt_identity())               # Get the user ID from the JWT token
@@ -156,7 +155,6 @@ def update_account(account_id):
         body = account_schema.load(request.get_json(), partial=True)
         # Update account fields with new values, keeping existing ones if not provided
         account.account_name = body.get("account_name") or account.account_name
-        account.description = body.get("description") or account.description
         try:
             # Commit the changes
             db.session.commit()

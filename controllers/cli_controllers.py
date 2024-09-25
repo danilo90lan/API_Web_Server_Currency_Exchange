@@ -70,7 +70,6 @@ def seed_database():
         ),
         Account(
             account_name = "travel",
-            description = "Buying a new car",
             currency_code = "EUR",
             balance = 3500,
             user = users[0]

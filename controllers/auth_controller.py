@@ -176,8 +176,8 @@ def delete_user():
     statement = db.select(Account).filter(
         Account.user_id == user_id,
         Account.balance > 0)
-    
     account_ids = db.session.scalars(statement).all()
+
     if account_ids:
         accounts_details = []
         # Iterate through each account with a positive balance
