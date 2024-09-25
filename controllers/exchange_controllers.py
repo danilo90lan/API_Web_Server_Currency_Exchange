@@ -115,7 +115,7 @@ def currency_exchange(account_id, destination_id):
         db.session.add(new_exchange)
         # Commit the transaction to the database
         db.session.commit()
-        return jsonify(exchange_schema.dump(new_exchange))
+        return jsonify(exchange_schema.dump(new_exchange)), 201
     except ValidationError as ve:
         # Handle validation errors for the request data
         return {"error": f"Invalid input: {ve.messages}"}, 400

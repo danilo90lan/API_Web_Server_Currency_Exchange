@@ -120,7 +120,7 @@ def create_account():
         try:
             # Commit the transactio to the session
             db.session.commit()
-            return jsonify({"SUCCESS":account_schema.dump(account)})
+            return jsonify({"SUCCESS":account_schema.dump(account)}), 201
         except SQLAlchemyError as e:
                 # Rollback the session if there's a database error
                 db.session.rollback()
@@ -195,4 +195,4 @@ def delete_Account(account_id):
             return {"error": f"Database operation failed {e}"}, 500
 
     else:
-            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}
+            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}, 400

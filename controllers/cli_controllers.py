@@ -75,6 +75,12 @@ def seed_database():
             user = users[0]
         ),
         Account(
+            account_name = "travel",
+            currency_code = "CZK",
+            balance = 500,
+            user = users[0]
+        ),
+        Account(
             account_name = "car",
             currency_code = "USD",
             balance = 597,
@@ -90,7 +96,7 @@ def seed_database():
             account_name = "europe-trip",
             currency_code = "EUR",
             balance = 1000,
-            user = users[2]
+            user = users[3]
         ),
         Account(
             account_name = "savings",
