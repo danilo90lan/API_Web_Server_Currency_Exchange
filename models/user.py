@@ -15,7 +15,7 @@ class User(db.Model):
     accounts = db.relationship("Account", back_populates="user", cascade="all, delete")
 
 class UserSchema(ma.Schema):
-    accounts = fields.List(fields.Nested("AccountSchema", only=["account_id", "account_name", "currency_code"]))
+    accounts = fields.List(fields.Nested("AccountSchema", only=["account_id", "account_name", "currency"]))
 
     # Validation
     name = fields.String(required=True, validate=Regexp("^[A-Za-z]{3,20}$", 
@@ -31,6 +31,9 @@ class UserSchema(ma.Schema):
     class Meta:
         fields = ("user_id", "name", "email", "password", "is_admin", "accounts")
 
+# This schema contains the password value and it's used for the validation only
 user_schema_validation = UserSchema()
+
+# These two schemas are used only for retrieving purposes
 user_schema = UserSchema(exclude=["password"])
 users_schema = UserSchema(many=True, exclude=["password"])

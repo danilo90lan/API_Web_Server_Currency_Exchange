@@ -184,9 +184,13 @@ def delete_user():
         for account in account_ids:
             # Create a dictionary for each account
             accounts_details.append(account)
-        return {"error": "User cannot be deleted because have accounts with a positive balance.",
+        return {"error": "User cannot be deleted because have accounts liked with a positive balance.",
                     "accounts": accounts_schema.dump(accounts_details)}, 400
     else:
+        # SELECT * 
+        # FROM users 
+        # WHERE user_id = (user_id);
+
         statement = db.select(User).filter_by(user_id=user_id)
         user = db.session.scalar(statement)
         try:
@@ -194,7 +198,7 @@ def delete_user():
             db.session.delete(user)
             # commit to the session
             db.session.commit()
-            return {"success":f"The user has been succesfully DELETED"}
+            return {"success":f"The user {user_id} has been succesfully DELETED"}
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
