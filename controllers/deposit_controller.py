@@ -33,7 +33,7 @@ def get_deposits(account_id):
         if deposits:
             return jsonify(deposits_schema.dump(deposits))
         else:
-            return {"message":f"There is NO deposit operations history for the account {account_id}"}
+            return {"message":f"There is NO deposit history for the account {account_id}"}, 404
     
     except SQLAlchemyError as e:
         return {"error": f"Database operation failed: {e}"}, 500 
@@ -49,31 +49,35 @@ def deposit_amount(account_id):
     """
 
     try:
-        # Get the deposit amount from the request body already validated (balance > 0)
+        # Get the deposit amount from the request body 
         body = deposit_schema.load(request.get_json())
-        amount = body.get("amount")
-        
-        # SELECT *
-        # FROM Account
-        # WHERE account_id = (account_id);
-        statement = db.select(Account).filter_by(account_id=account_id)
-        account = db.session.scalar(statement)
+        amount = body.get("amount")   
+        # Check if the amlount is greater than 0
+        if amount > 0:
 
-        # update account's balance
-        account.balance = float(account.balance) + amount
+            # SELECT *
+            # FROM Account
+            # WHERE account_id = (account_id);
+            statement = db.select(Account).filter_by(account_id=account_id)
+            account = db.session.scalar(statement)
 
-        # Create a new deposit record
-        new_deposit = Deposit(
-            amount = amount,
-            description = body.get("description"),
-            account = account
-        )
-        db.session.add(new_deposit)
+            # update account's balance
+            account.balance = float(account.balance) + amount
+
+            # Create a new deposit record
+            new_deposit = Deposit(
+                amount = amount,
+                description = body.get("description"),
+                account = account
+            )
+            db.session.add(new_deposit)
+            
+            db.session.commit()
+            # Return the newly created deposit
+            return jsonify(deposit_schema.dump(new_deposit)), 201
+        else:
+            return {"error":"The deposit amount must be greater than 0"}, 400
         
-        db.session.commit()
-        # Return the newly created deposit
-        return jsonify(deposit_schema.dump(new_deposit)), 201
-    
     except ValidationError as ve:
         return {"error": f"Invalid input: {ve.messages}"}, 400 
     except SQLAlchemyError as e:

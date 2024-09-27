@@ -150,7 +150,6 @@ def seed_database():
     ]
 
 
-
     db.session.add_all(deposits)
     db.session.add_all(users)
     print("Users added succesfully")

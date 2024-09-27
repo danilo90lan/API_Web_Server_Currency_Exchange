@@ -40,7 +40,7 @@ def get_exchanges(account_id):
         if exchanges:
             return jsonify(exchanges_schema.dump(exchanges))
         else:
-            return {"message":f"There is NO exchanges operations history for the account {account_id}"}
+            return {"message":f"There is NO exchanges operations history for the account {account_id}"}, 404
     except SQLAlchemyError as e:
         return {"error": f"Database operation failed: {e}"}, 500 
 
@@ -58,12 +58,14 @@ def currency_exchange(account_id, destination_id):
 
     # Check if the source and destination accounts are the same
     if account_id == destination_id:
-        return {"error":"Cannot transfer funds to the same account. Please select a different account."}
+        return {"error":"Cannot transfer funds to the same account. Please select a different account."},400
     
     # Load the request body and extract the amount
     # the amount has been already validated (amount > 0)
     body = exchange_schema.load(request.get_json())
     amount = body.get("amount")
+    if amount <= 0:
+        return {"error":"Amount to transfer must be greater than 0"}, 400
     
     try:
         # SELECT * FROM Account WHERE account_id = (account_id);
@@ -74,14 +76,18 @@ def currency_exchange(account_id, destination_id):
         if account_from.balance >= amount:
             account_from.balance = float(account_from.balance) - amount
         else:
-            return {"error": f"Insufficient funds in the account {account_from.account_id}."}
+            return {"error": f"Insufficient funds in the account {account_from.account_id}."}, 400
 
         # check if the two accounts have different currency_codes
         # if different currency_code needs the currency conversion to be performed
 
-        # SELECT * FROM Account WHERE account_id = :destination_id;
+        # SELECT * FROM Account WHERE account_id = (destination_id);
         statement = db.select(Account).filter_by(account_id=destination_id)
         account_to = db.session.scalar(statement)
+
+        # if the destination account does NOT exist an error message is returned
+        if not account_to:
+            return {"error":f"The destination account ID {destination_id} does NOT exist"}, 404
 
         # Check if the two accounts have different currency codes
         if account_from.currency_code != account_to.currency_code:

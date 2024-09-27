@@ -38,7 +38,8 @@ def seed_currency_table():
 
     list_currency = []
     currency = get_currencies()
-    # Prepare the values for insertion as Currency objects
+    # Create Currency instances retrieving the rates and the currency_code 
+    # from the third-party API response (JSON object) and append it to list_currency
     for code, rate in currency["rates"].items():
         currency_obj = Currency(
             currency_code=code,

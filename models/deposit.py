@@ -15,7 +15,7 @@ class Deposit(db.Model):
     account = db.relationship("Account", back_populates="deposits")
 
 class DepositSchema(ma.Schema):
-    account = fields.Nested("AccountSchema", only=["account_id", "currency", "balance"])
+    account = fields.Nested("AccountSchema", only=["account_id", "balance", "currency"])
 
     # validation
     amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))
