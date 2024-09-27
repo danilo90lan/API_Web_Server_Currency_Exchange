@@ -1,5 +1,5 @@
 from models.account import Account, accounts_schema, account_schema
-from models.user import User
+from models.currency import Currency
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
@@ -23,36 +23,36 @@ account_bp.register_blueprint(deposit_bp)
 
 # Route to get the count of all accounts grouped by user
 @account_bp.route("/all")
-# Ensure the user is authenticated
-@jwt_required()         # Ensure the user is authenticated
-def count_accounts_grouped_by_user():
+@jwt_required()
+def count_accounts_grouped_by_currency():
     """
-     this function retrieves and counts all user accounts, 
-     providing the counts grouped by user details, 
-     but only if the requester has admin privileges
+    This function retrieves and counts all accounts, 
+    providing the counts grouped by currency_code, 
+    but only if the requester has admin privileges.
     """
     # Check if the user is an admin
     if authorize_as_admin():
 
-        # SELECT User.user_id, User.name, COUNT(Account.account_id) 
-        # FROM User
-        # JOIN Account ON User.user_id = Account.user_id 
-        # GROUP BY User.user_id, User.name;
+        # SELECT currencies.currency_code, COUNT(accounts.account_id)
+        # FROM accounts
+        # JOIN currencies ON accounts.currency_code = currencies.currency_code
+        # GROUP BY currencies.currency_code;
         statement = db.session.query(
-            User.user_id, User.name, db.func.count(Account.account_id)
-        ).join(Account, User.user_id == Account.user_id).group_by(User.user_id, User.name)
+            Currency.currency_code, db.func.count(Account.account_id)
+        ).join(Currency, Account.currency_code == Currency.currency_code).group_by(Currency.currency_code)
 
         # Execute the query
-        user_accounts = statement.all()
+        currency_accounts = statement.all()
+
         # Format the result as a list of dictionaries
         result = []
-        for user_id, name, count in user_accounts:
+        for currency, count in currency_accounts:
             record = {
-                "user_id": user_id,
-                "name": name,
-                "number of accounts": count
+                "Currency": currency,
+                "Number of accounts": count
             }
             result.append(record)
+
         # Return the formatted result as JSON
         return jsonify(result)
     else:

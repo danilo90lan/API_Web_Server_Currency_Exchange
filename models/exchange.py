@@ -1,37 +1,52 @@
-from init import db, ma
-from marshmallow import fields
-from marshmallow.validate import Regexp, Range
-from sqlalchemy import func
+from init import db, ma  # db: SQLAlchemy instance, ma: Marshmallow instance for schema validation
+from marshmallow import fields  # For defining schema fields
+from marshmallow.validate import Regexp, Range  # For field validation (regular expressions, ranges)
+from sqlalchemy import func  # For SQL functions such as 'now' to generate timestamps
 
 class Exchange(db.Model):
-    __tablename__ = "exchanges"
-    exchange_id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)       # VALIDATED
-    amount_exchanged = db.Column(db.Numeric(precision=10, scale=2), nullable=False)     # VALIDATED
-    description = db.Column(db.String(100))
-    date_time = db.Column(db.DateTime, default=func.now())
+    __tablename__ = "exchanges" 
+    
+    # Defining columns for the 'exchanges' table
+    exchange_id = db.Column(db.Integer, primary_key=True)  # Primary key for each exchange transaction
+    amount = db.Column(db.Numeric(precision=10, scale=2), nullable=False)  # Amount exchanged (validated to be non-negative)
+    amount_exchanged = db.Column(db.Numeric(precision=10, scale=2), nullable=False)  # The amount received after the exchange, validated similarly
+    description = db.Column(db.String(100))  # Optional description for the exchange
+    date_time = db.Column(db.DateTime, default=func.now())  # Timestamp of when the exchange happened, defaults to the current time
 
-    # foreign keys
-    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
+    # Foreign keys to link exchange to 'from' and 'to' accounts
+    # Account the amount is being exchanged from, nullable on account deletion (SET NULL) in order to keep the history trace in case the account is deleted
+    from_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))  
+
+    # Account the exchanged amount is being deposited to, nullable on account deletion (SET NULL) in order to keep the history trace in case the account is deleted
     to_account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id", ondelete='SET NULL'))
 
-    # relationships
+    # The Exchange model has multiple foreign keys referencing the same related Account model, the foreign_keys parameter 
+    # helps SQLAlchemy determine which column to use for which relationship.
+
+    # Relationship with the origin account (account sending the amount)
     account_origin = db.relationship("Account", foreign_keys=[from_account_id], back_populates="exchange_from")
+    
+    # Relationship with the destination account (account receiving the exchanged amount)
     account_destination = db.relationship("Account", foreign_keys=[to_account_id], back_populates="exchange_to")
 
 
 class ExchangeSchema(ma.Schema):
-    account_origin = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])
-    account_destination = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])
+    # Nested fields to include details of the origin and destination accounts
+    account_origin = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])  
+    
+    account_destination = fields.Nested("AccountSchema", only=["account_id", "currency", "user"])  
 
-    amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))
+    # Validation 
+    # Ensures the amount to be exchanged is positive (MIN=1)
+    amount = fields.Float(required=True, validate=Range(min=1, error="Amount must be greater than 0."))  
 
+    # Validates the description to ensure it's between 4 and 100 characters, containing only alphanumeric characters and spaces
     description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{4,100}$", 
-                                                               error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))
+                                                error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))  
 
     class Meta:
         fields = ("exchange_id", "amount", "account_origin", "account_destination", "amount_exchanged", "description", "date_time")
-        ordered = True
+        ordered = True 
 
-exchange_schema = ExchangeSchema()
-exchanges_schema = ExchangeSchema(many=True)
+exchange_schema = ExchangeSchema()  # For serializing a single exchange
+exchanges_schema = ExchangeSchema(many=True)  # For serializing multiple exchanges (a list of exchanges)

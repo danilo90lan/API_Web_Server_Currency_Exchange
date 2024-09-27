@@ -50,7 +50,7 @@ def check_account_user(func):
         if not origin_account:
             return {"error": f"The account ID {account_id} does NOT exist!"}, 404
         
-        # Verify the account belongs to the authenticated user
+        # Verify if the account belongs to the authenticated user
         if origin_account.user_id != user_id:
             return {"error": f"The account ID {account_id} does NOT belong to the current user!"}, 403
         
