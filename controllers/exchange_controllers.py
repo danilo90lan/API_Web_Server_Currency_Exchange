@@ -4,19 +4,19 @@ from models.exchange import Exchange, exchange_schema, exchanges_schema
 from init import db
 from flask import Blueprint, request, jsonify
 
-from utils.authorization import check_account_user
-from flask_jwt_extended import jwt_required
+from utils.authorization import check_account_user  # Import the authorization decorator
+from flask_jwt_extended import jwt_required  # Import JWT-required decorator for authentication
 
-from sqlalchemy.exc import SQLAlchemyError
-from marshmallow.exceptions import ValidationError
+from sqlalchemy.exc import SQLAlchemyError  # Import SQLAlchemy error handling
+from marshmallow.exceptions import ValidationError  # Import marshmallow validation error
 
-
+# Create a blueprint for the exchange routes with a URL prefix that includes the account ID
 exchange_bp = Blueprint("exchange", __name__, url_prefix="/<int:account_id>")
 
 
 @exchange_bp.route("/exchange-history")
-@jwt_required()
-@check_account_user
+@jwt_required()  # Require JWT authentication for this route
+@check_account_user  # Ensure the user has access to the account
 def get_exchanges(account_id):
     """
     Retrieves the exchange history for the specified account.
@@ -25,6 +25,9 @@ def get_exchanges(account_id):
     regardless of whether the account is the sender or the receiver.
     """
     try:
+        # Retrieves all exchanges involving the specified account, 
+        # ordered by the date and time in descending order (most recent first).
+
         # SELECT *
         # FROM Exchange
         # WHERE from_account_id = (account_id) OR to_account_id = (account_id)
@@ -34,10 +37,11 @@ def get_exchanges(account_id):
                 (Exchange.to_account_id == account_id)
             ).order_by(Exchange.date_time.desc())  # Order by date_time in descending order
         
-        result = db.session.execute(statement)
-        exchanges = result.scalars().all() 
+        result = db.session.execute(statement)  # Execute the statement
+        exchanges = result.scalars().all()  # Retrieve all exchange records
 
         if exchanges:
+            # Return the exchanges in JSON format
             return jsonify(exchanges_schema.dump(exchanges))
         else:
             return {"message":f"There is NO exchanges operations history for the account {account_id}"}, 404
@@ -46,8 +50,8 @@ def get_exchanges(account_id):
 
 
 @exchange_bp.route("/transfer/<int:destination_id>", methods=["POST"])
-@jwt_required()
-@check_account_user # Verify the account that initiate the transfer belongs to the current user
+@jwt_required()  # Require JWT authentication for this route
+@check_account_user  # Verify the account that initiates the transfer belongs to the current user
 def currency_exchange(account_id, destination_id):
     """
     Transfers funds from the source account to the destination account.
@@ -63,25 +67,34 @@ def currency_exchange(account_id, destination_id):
     # Load the request body and extract the amount
     # the amount has been already validated (amount > 0)
     body = exchange_schema.load(request.get_json())
+    # Get the transfer amount from the request body
     amount = body.get("amount")
     if amount <= 0:
         return {"error":"Amount to transfer must be greater than 0"}, 400
     
     try:
-        # SELECT * FROM Account WHERE account_id = (account_id);
+        # Retrieves the source account to check the balance.
+
+        # SELECT * 
+        # FROM Account 
+        # WHERE account_id = (account_id);
         statement = db.select(Account).filter_by(account_id=account_id)
         account_from = db.session.scalar(statement)
 
         # Check if the source account has sufficient funds
         if account_from.balance >= amount:
+            # Deduct amount from source account
             account_from.balance = float(account_from.balance) - amount
         else:
+            # Handle insufficient funds
             return {"error": f"Insufficient funds in the account {account_from.account_id}."}, 400
 
         # check if the two accounts have different currency_codes
-        # if different currency_code needs the currency conversion to be performed
+        # if different currency_code, the currency conversion needs to be performed
 
-        # SELECT * FROM Account WHERE account_id = (destination_id);
+        # SELECT * 
+        # FROM Account 
+        # WHERE account_id = (destination_id);
         statement = db.select(Account).filter_by(account_id=destination_id)
         account_to = db.session.scalar(statement)
 
@@ -91,12 +104,19 @@ def currency_exchange(account_id, destination_id):
 
         # Check if the two accounts have different currency codes
         if account_from.currency_code != account_to.currency_code:
+            # Get the source currency
 
-            # SELECT * FROM Currency WHERE currency_code = (currency_code);
+            # SELECT * 
+            # FROM Currency
+            # WHERE currency_code = (currency_code);
             statement = db.select(Currency).filter_by(currency_code=account_from.currency_code)
             currency_from = db.session.scalar(statement)
 
-            # SELECT * FROM Currency WHERE currency_code = (currency_code);
+            # Get the destination currency
+
+            # SELECT * 
+            # FROM Currency 
+            # WHERE currency_code = (currency_code);
             statement = db.select(Currency).filter_by(currency_code=account_to.currency_code)
             currency_to = db.session.scalar(statement)
 
@@ -109,18 +129,20 @@ def currency_exchange(account_id, destination_id):
         # update the balance of the destination accont
         account_to.balance = float(account_to.balance) + amount_exchanged
 
-        # create a new instance of Exchange
+        # Create a new instance of Exchange
         new_exchange = Exchange(
-            amount = body.get("amount"),
-            amount_exchanged = amount_exchanged,
-            description = body.get("description"),
-            account_origin = account_from,
-            account_destination = account_to
+            amount=body.get("amount"),  # Original amount transferred
+            amount_exchanged=amount_exchanged,  # Amount after conversion (if applicable)
+            description=body.get("description"),  # Description of the exchange
+            account_origin=account_from,  # Reference to the source account
+            account_destination=account_to  # Reference to the destination account
         )
+
         # Add the new exchange record to the session
         db.session.add(new_exchange)
         # Commit the transaction to the database
         db.session.commit()
+        # Return the new exchange record
         return jsonify(exchange_schema.dump(new_exchange)), 201
     except ValidationError as ve:
         # Handle validation errors for the request data

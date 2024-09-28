@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import SQLAlchemyError
 from marshmallow.exceptions import ValidationError
 
-
+# Create a Blueprint for deposit-related routes with account_id as part of the URL prefix
 deposit_bp = Blueprint("deposit", __name__, url_prefix="/<int:account_id>")
 
 @deposit_bp.route("/deposit-history")
@@ -21,6 +21,8 @@ def get_deposits(account_id):
     Ensures that the account belongs to the authenticated user.
     """
     try:
+        # Query to fetch deposits for the given account_id, ordered by date_time in descending order
+
         # SELECT *
         # FROM Deposit
         # WHERE account_id = (account_id)
@@ -51,9 +53,11 @@ def deposit_amount(account_id):
     try:
         # Get the deposit amount from the request body 
         body = deposit_schema.load(request.get_json())
-        amount = body.get("amount")   
+        amount = body.get("amount")  
+
         # Check if the amlount is greater than 0
         if amount > 0:
+            # Query to fetch the account by account_id
 
             # SELECT *
             # FROM Account
@@ -71,8 +75,8 @@ def deposit_amount(account_id):
                 account = account
             )
             db.session.add(new_deposit)
-            
             db.session.commit()
+            
             # Return the newly created deposit
             return jsonify(deposit_schema.dump(new_deposit)), 201
         else:

@@ -1,16 +1,23 @@
-from datetime import timedelta
+# Import timedelta for token expiration time
+from datetime import timedelta  
 
+# Import Flask modules for creating blueprints and handling requests/responses
 from flask import Blueprint, jsonify, request
 
 from models.user import User, user_schema, users_schema, user_schema_validation
 from models.account import Account, accounts_schema
+# Import bcrypt for password hashing and db for database operations
 from init import bcrypt, db
 
+# Import SQLAlchemy error handling and PostgreSQL error codes
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from psycopg2 import errorcodes
+# Import Forbidden exception for unauthorized access
 from werkzeug.exceptions import Forbidden
+# JWT handling for authentication
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
+# Import custom authorization utility
 from utils.authorization import authorize_as_admin
 
 # Create a Blueprint for auth routes
@@ -19,7 +26,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 #get all users
 @auth_bp.route("/all")
-@jwt_required()
+@jwt_required()     # Ensure that only authenticated users can access this route
 def get_all_users():
     """
     fetches and returns all user records from the database, 
@@ -27,6 +34,8 @@ def get_all_users():
     """
     # Check if the user has admin privileges
     if authorize_as_admin():
+        # Create a SQL statement to select all users
+
         # SELECT * 
         # FROM User;
         statement = db.select(User)
@@ -45,19 +54,23 @@ def register_user():
     securely hashing passwords, creating a new user record
     """
     try:
-        # Load and validate the incoming JSON data
+        # Load and validate the incoming JSON data against the schema
+        # 'request.get_json()' retrieves the incoming JSON payload from the client
         body = user_schema_validation.load(request.get_json())
+        # Extract the password from the validated JSON data
         password = body.get("password")
         
         # Create an instance of the User Model
         user = User(
-            name = body.get("name").capitalize(),
-            email = body.get("email"),
+            name = body.get("name").capitalize(),       # Capitalize the user's name for consistency
+            email = body.get("email"),                  # Set the user's email
+            # Hash the password securely with bcrypt and decode it to a UTF-8 string
             password = bcrypt.generate_password_hash(password).decode("utf-8")
         )
         # Add and commit to the DB session
         db.session.add(user)
         db.session.commit()
+        # Return a success message along with the serialized user data
         return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
  
     except IntegrityError as err:
@@ -85,6 +98,8 @@ def login():
 
     # check if the email exist
     if email:
+        # Create a SQL statement to select the user by email
+
         # SELECT * 
         # FROM User 
         # WHERE email = (email);
@@ -103,7 +118,10 @@ def login():
         # Check if the provided password matches the stored hashed password
         if bcrypt.check_password_hash(user.password, password):
             # Generate a JWT token for the authenticated user
-            token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(days=10))
+            token = create_access_token(
+                identity=str(user.user_id),         # The identity of the token (the user ID in string format)
+                expires_delta=timedelta(days=3))    # The token will expire after 3 days
+             
              # Return the success response with user info and token
             return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
         else:
@@ -124,7 +142,10 @@ def update_user():
     # Load and validate the incoming JSON data
     body = user_schema_validation.load(request.get_json(), partial=True)
     password = body.get("password")
+    # Get the ID of the authenticated user
     user_id = get_jwt_identity()
+
+    # Create a SQL statement to select the user by user_id
 
     # SELECT * 
     # FROM User 
@@ -142,6 +163,7 @@ def update_user():
             if password:
                 user.password = bcrypt.generate_password_hash(password).decode("utf-8")
 
+            # Commit changes to the database
             db.session.commit()
             return jsonify({"message": "User info updated successfully!"}, user_schema.dump(user))
         except IntegrityError as err:
@@ -169,6 +191,8 @@ def delete_user():
     """
     user_id = get_jwt_identity()
 
+    # Create a SQL statement to check for accounts with a positive balance
+
     # SELECT * 
     # FROM accounts 
     # WHERE user_id = (user_id) 
@@ -176,7 +200,7 @@ def delete_user():
     statement = db.select(Account).filter(
         Account.user_id == user_id,
         Account.balance > 0)
-    account_ids = db.session.scalars(statement).all()
+    account_ids = db.session.scalars(statement)
 
     if account_ids:
         accounts_details = []
@@ -187,6 +211,8 @@ def delete_user():
         return {"error": "User cannot be deleted because have accounts liked with a positive balance.",
                     "accounts": accounts_schema.dump(accounts_details)}, 400
     else:
+        # Create a SQL statement to select the user by user_id
+
         # SELECT * 
         # FROM users 
         # WHERE user_id = (user_id);
@@ -194,11 +220,12 @@ def delete_user():
         statement = db.select(User).filter_by(user_id=user_id)
         user = db.session.scalar(statement)
         try:
-            # delete user
+            # Delete the user from the session
             db.session.delete(user)
-            # commit to the session
+            # Commit changes to the session
             db.session.commit()
             return {"success":f"The user {user_id} has been succesfully DELETED"}
         except SQLAlchemyError as e:
+            # Roll back the session on error
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500

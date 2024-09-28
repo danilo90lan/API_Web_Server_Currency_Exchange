@@ -1,17 +1,28 @@
+# Import Account model and schemas for serialization
 from models.account import Account, accounts_schema, account_schema
+# Import Currency model
 from models.currency import Currency
 
+# Import SQLAlchemy exceptions for error handling
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+# Import error codes from psycopg2 for PostgreSQL
 from psycopg2 import errorcodes
+# Import Forbidden exception for access control
 from werkzeug.exceptions import Forbidden
 
 from init import db
+# Import Flask modules for routing and JSON responses
 from flask import Blueprint, request, jsonify
+# Import JWT functions for authentication
 from flask_jwt_extended import jwt_required, get_jwt_identity
+# Import exchange-related routes
 from controllers.exchange_controllers import exchange_bp
+# Import deposit-related routes
 from controllers.deposit_controller import deposit_bp
 
+# Import utility for checking account ownership
 from utils.authorization import check_account_user
+# Import utility for admin authorizatio
 from utils.authorization import authorize_as_admin
 
 # Create a Blueprint for account routes
@@ -23,7 +34,7 @@ account_bp.register_blueprint(deposit_bp)
 
 # Route to get the count of all accounts grouped by user
 @account_bp.route("/all")
-@jwt_required()
+@jwt_required()     # Ensure the user is authenticated
 def count_accounts_grouped_by_currency():
     """
     This function retrieves and counts all accounts, 
@@ -32,6 +43,8 @@ def count_accounts_grouped_by_currency():
     """
     # Check if the user is an admin
     if authorize_as_admin():
+
+        # Query to count accounts and group by currency
 
         # SELECT currencies.currency_code, COUNT(accounts.account_id)
         # FROM accounts
@@ -67,6 +80,8 @@ def get_accounts():
     """retrieves and returns all accounts associated with the authenticated user
     """
 
+    # Query to get all accounts for the authenticated user
+
     # SELECT * 
     # FROM Account 
     # WHERE user_id = (user_id);
@@ -85,6 +100,8 @@ def get_account(account_id):
         @check_account_user is a decorator that checks whether the account_id 
         parameter belongs to the current user
     """
+
+    # Query to get the specific account by account_id
 
     # SELECT * 
     # FROM Account 
@@ -143,6 +160,8 @@ def update_account(account_id):
      while ensuring that the user has permission to make changes
     """
     
+    # Query to get the specific account by account_id
+
     # SELECT * 
     # FROM Account 
     # WHERE account_id = (account_id);
@@ -176,6 +195,8 @@ def delete_Account(account_id):
     this function securely deletes a specified account only if the balance = 0
     """
 
+    # Query to get the specific account by account_id
+
     # SELECT * 
     # FROM Account 
     # WHERE account_id = (account_id);
@@ -191,6 +212,7 @@ def delete_Account(account_id):
             db.session.commit()
             return {"success":f"The account {account_id} has been succesfully DELETED"}
         except SQLAlchemyError as e:
+            # Rollback if there's a database error
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
 

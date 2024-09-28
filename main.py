@@ -3,7 +3,10 @@ from flask import Flask
 from marshmallow.exceptions import ValidationError
 from werkzeug.exceptions import Forbidden
 
+# Import database, marshmallow, bcrypt, and JWT from the init module
 from init import db, ma, bcrypt, jwt
+
+# Import CLI commands and route blueprints from controllers
 from controllers.cli_controllers import db_commands
 from controllers.account_controller import account_bp
 from controllers.currency_controller import currency_bp
@@ -12,14 +15,15 @@ from controllers.auth_controller import auth_bp
 from utils.currency import update_exchange_rates
 from apscheduler.schedulers.background import BackgroundScheduler
 
-
 def create_app():
     app = Flask(__name__)
+    # Prevent Flask from sorting JSON keys alphabetically (for more control over JSON output)
     app.json.sort_keys = False
+    # Set the configuration for the database and JWT secret key using environment variables
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 
-    # Initialize extensions with the app instance
+    # Initialize the database, marshmallow, bcrypt, and JWT with the Flask app instance
     db.init_app(app)
     ma.init_app(app)
     bcrypt.init_app(app)
@@ -53,10 +57,15 @@ def create_app():
     app.register_blueprint(auth_bp)         # Authentication routes
 
    
-    # Start the background scheduler for updating exchange rates
+    # Initialize the background scheduler to handle scheduled tasks
+    # This scheduler will continuously run the update_exchange_rates() function every 60 minutes to keep exchange rates updated.
+
     scheduler = BackgroundScheduler()
-    # Execute update_exchange_rates() every 60 minutes
+    # Schedule the `update_exchange_rates` function to run every 60 minutes
+    # The `args=[app]` ensures the function receives the `app` instance as an argument
     scheduler.add_job(func=update_exchange_rates, trigger="interval", minutes=60, args=[app])
+
+    # Start the scheduler to begin executing the scheduled tasks
     scheduler.start()
 
     return app

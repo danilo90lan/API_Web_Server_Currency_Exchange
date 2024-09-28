@@ -21,6 +21,7 @@ def authorize_as_admin():
         statement = db.select(User).filter_by(user_id=user_id)
         user = db.session.scalar(statement)
         
+        # check if the is_admin attribute is TRue or False
         if user.is_admin == True:
             return True
         else:

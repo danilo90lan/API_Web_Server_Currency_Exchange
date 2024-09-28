@@ -10,28 +10,44 @@ from utils.currency import seed_currency_table
 
 from sqlalchemy.exc import SQLAlchemyError
 
-
+# Define a Blueprint for database management commands
 db_commands = Blueprint("db", __name__)
 
 
 @db_commands.cli.command("create")
 def create_tables():
-    db.create_all()
+    """
+    This command creates all tables in the database based on the current models.
+    It also seeds the currency table with initial data.
+    """
+
+    # Create all tables as defined by SQLAlchemy models
+    db.create_all()     
     print("Tables created")
-    # Initialize currency_table
+    # Initialize currency table by seeding data from an external API
     seed_currency_table()
 
 
 @db_commands.cli.command("drop")
 def drop_tables():
-        # Connect to the database
-        with current_app.app_context():
-            db.reflect()  # Reflect the current database structure
-            db.drop_all()  # This will drop all tables
-            print("All tables dropped successfully")
+    """
+    This command drops all tables from the database.
+    Useful for resetting the database during development.
+    """
+
+    # Connect to the application context to interact with the database
+    with current_app.app_context():
+        # Reflect the current database structure
+        db.reflect()  
+        # This will drop all tables
+        db.drop_all()  
+        print("All tables dropped successfully")
 
 @db_commands.cli.command("seed")
 def seed_database():
+    """
+    This command seeds the database with initial data for users, accounts, and deposits.
+    """
     
     users = [
         User(
@@ -66,7 +82,7 @@ def seed_database():
             account_name = "savings",
             currency_code = "AUD",
             balance = 2000,
-            user = users[0]
+            user = users[0]     # Account is linked to user Danilo
         ),
         Account(
             account_name = "travel",
@@ -84,7 +100,7 @@ def seed_database():
             account_name = "car",
             currency_code = "USD",
             balance = 597,
-            user = users[1]
+            user = users[1]     # Account is linked to user Alberto
         ),
         Account(
             account_name = "travel",
@@ -96,13 +112,13 @@ def seed_database():
             account_name = "europe-trip",
             currency_code = "EUR",
             balance = 1000,
-            user = users[3]
+            user = users[3]     # Account is linked to user Sam
         ),
         Account(
             account_name = "savings",
             currency_code = "CAD",
             balance = 3500,
-            user = users[2]
+            user = users[2]     # Account is linked to user Marco
         ),
         Account(
             account_name = "savings",
@@ -121,31 +137,31 @@ def seed_database():
     deposits = [
         Deposit(
             amount = 200,
-            account = accounts[1]
+            account = accounts[1]       # Deposit linked to account with currency_code EUR
         ),
         Deposit(
             amount = 1050,
             description = "car",
-            account = accounts[2]
+            account = accounts[2]       # Deposit linked to account with currency_code CZK
         ),
         Deposit(
             amount = 3400,
             description = "Savings",
-            account = accounts[0]
+            account = accounts[0]       # Deposit linked to account with currency_code AUD
         ),
         Deposit(
             amount = 300,
             description = "savings",
-            account = accounts[5]
+            account = accounts[5]       # Deposit linked to account with currency_code EUR
         ),
         Deposit(
             amount = 180,
-            account = accounts[3]
+            account = accounts[3]       # Deposit linked to account with currency_code USD
         ),
         Deposit(
             amount = 100,
             description = "paycheck",
-            account = accounts[3]
+            account = accounts[3]       # Another deposit for the USD account
         )
     ]
 
@@ -160,5 +176,6 @@ def seed_database():
         db.session.commit()
         print("Tables seeded!")
     except SQLAlchemyError as e:
+        # In case of any errors, roll back the transaction to prevent partial commits
         db.session.rollback()
         return {"error": f"Database operation failed {e}"}, 500

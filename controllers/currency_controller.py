@@ -16,11 +16,16 @@ def get_all_currencies():
     ensuring that the data is sorted
     """
     try: 
+        # Create a query to retrieve all currencies from the database, ordered by the currency code.
+        
         # SELECT * 
         # FROM Currency 
         # ORDER BY currency_code;
+
         statement = db.select(Currency).order_by(Currency.currency_code)
         accounts = db.session.scalars(statement)
+        
+        # Serialize the data and return as JSON
         return jsonify(currencies_schema.dump(accounts))
     except SQLAlchemyError as e:
         return {"error": f"Database operation failed: {e}"}, 500 

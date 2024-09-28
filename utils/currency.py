@@ -6,11 +6,11 @@ from models.currency import Currency
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
+
 def get_currencies():
     """
     retrieve currency data from an external API
     """
-
     endpoint = "https://openexchangerates.org/api/latest.json?app_id=e73026dfbc164a59a8fb416cc067ca33"
     try:
         # Make a GET request to the API endpoint
@@ -37,8 +37,11 @@ def seed_currency_table():
     """
 
     list_currency = []
+
+    # Fetch currency data from the external API
     currency = get_currencies()
-    # Create Currency instances retrieving the rates and the currency_code 
+
+    # Create Currency objects retrieving the rates and the currency_code 
     # from the third-party API response (JSON object) and append it to list_currency
     for code, rate in currency["rates"].items():
         currency_obj = Currency(
@@ -46,6 +49,7 @@ def seed_currency_table():
             rate=rate,
             base_code=currency["base"]
         )
+        # Append the newly created Currency object to the list
         list_currency.append(currency_obj)
 
     # Add all Currency objects to the session
@@ -65,9 +69,12 @@ def update_exchange_rates(app):
     in the database with new values fetched from the API.
     It's called by the apscheduler in background
     """
+
+    # Create an application context so the function can access Flask resources like the database
     with app.app_context():
         # Retrieve the latest currency data from the external API
         currency = get_currencies()
+
         try:
             # Loop through the currency data and update the corresponding rows
             for code, rate in currency["rates"].items():
@@ -77,9 +84,10 @@ def update_exchange_rates(app):
                 # SET rate = (new_rate), last_update = (datetime.now()
                 # WHERE currency_code = '(currency_code)'
                 db.session.query(Currency).filter_by(currency_code=code).update({
-                    "rate": rate,
-                    "last_update": func.now()
+                    "rate": rate,               # Set the new exchange rate
+                    "last_update": func.now()   # Update the last_update timestamp
                 })
+
             # Commit the transaction to save changes
             db.session.commit()
             print("Currencies updated successfully!")
@@ -89,6 +97,13 @@ def update_exchange_rates(app):
 
 
 def get_currencies_codes():
+    """
+    Iterate throught currency JSON object obtained from the third party API
+    and return a list of all the currency codes stored in a tuple.
+    It's going to be used for validation purposes, in order to create a new account 
+    and select the currency to associate to.
+    """
+
     currency = get_currencies()
     list_currency_codes = currency["rates"].keys()
     return tuple(list_currency_codes)
