@@ -11,7 +11,7 @@ def get_currencies():
     """
     retrieve currency data from an external API
     """
-    endpoint = "https://openexchangerates.org/api/latest.json?app_id=e73026dfbc164a59a8fb416cc067ca33"
+    endpoint = "https://openexchangerates.org/api/latest.json?app_id=71562a44ff3d4ad98578bb6d44ef9a9b"
     try:
         # Make a GET request to the API endpoint
         response = requests.get(endpoint)
