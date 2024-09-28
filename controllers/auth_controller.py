@@ -1,5 +1,5 @@
 # Import timedelta for token expiration time
-from datetime import timedelta  
+from datetime import timedelta
 
 # Import Flask modules for creating blueprints and handling requests/responses
 from flask import Blueprint, jsonify, request
@@ -24,19 +24,24 @@ from utils.authorization import authorize_as_admin
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-#get all users
+# get all users
 @auth_bp.route("/all")
 @jwt_required()     # Ensure that only authenticated users can access this route
 def get_all_users():
     """
-    fetches and returns all user records from the database, 
-    ensuring that only users with admin privileges can access this information
+    Fetches and returns all user records from the database, 
+    ensuring that only users with admin privileges can access this information.
+
+    Returns:
+        JSON response containing the list of users.
+    Raises:
+        Forbidden: If the user does not have admin privileges.
     """
     # Check if the user has admin privileges
     if authorize_as_admin():
         # Create a SQL statement to select all users
 
-        # SELECT * 
+        # SELECT *
         # FROM User;
         statement = db.select(User)
         users = db.session.scalars(statement)
@@ -51,7 +56,13 @@ def get_all_users():
 def register_user():
     """
     User registration by validating input, 
-    securely hashing passwords, creating a new user record
+    securely hashing passwords, creating a new user record.
+
+    Returns:
+        JSON response indicating success or failure of the registration.
+    Raises:
+        400: If there are validation errors.
+        409: If the email is already registered.
     """
     try:
         # Load and validate the incoming JSON data against the schema
@@ -59,27 +70,29 @@ def register_user():
         body = user_schema_validation.load(request.get_json())
         # Extract the password from the validated JSON data
         password = body.get("password")
-        
+
         # Create an instance of the User Model
         user = User(
-            name = body.get("name").capitalize(),       # Capitalize the user's name for consistency
-            email = body.get("email"),                  # Set the user's email
+            # Capitalize the user's name for consistency
+            name=body.get("name").capitalize(),
+            email=body.get("email"),                  # Set the user's email
             # Hash the password securely with bcrypt and decode it to a UTF-8 string
-            password = bcrypt.generate_password_hash(password).decode("utf-8")
+            password=bcrypt.generate_password_hash(password).decode("utf-8")
         )
         # Add and commit to the DB session
         db.session.add(user)
         db.session.commit()
         # Return a success message along with the serialized user data
         return jsonify({"message": "User registered successfully!"}, user_schema.dump(user)), 201
- 
+
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             # not null violation error
             return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
             # unique violation error
-            return {"error": "Email is already registered in the database. Please enter another email."}, 409   # HTTP conflict error
+            # HTTP conflict error
+            return {"error": "Email is already registered in the database. Please enter another email."}, 409
     except ValueError as err:
         # Handle the empty password error
         if str(err) == "Password must be non-empty.":
@@ -89,8 +102,15 @@ def register_user():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     """
-    this function manages user login by validating the email and password, 
-    generating a JWT token for authenticated users
+    Manages user login by validating the email and password, 
+    generating a JWT token for authenticated users.
+
+    Returns:
+        JSON response containing user info and token on successful login.
+    Raises:
+        404: If the email does not exist.
+        401: If the password is invalid.
+        400: If required fields are missing.
     """
 
     body = request.get_json()
@@ -100,15 +120,15 @@ def login():
     if email:
         # Create a SQL statement to select the user by email
 
-        # SELECT * 
-        # FROM User 
+        # SELECT *
+        # FROM User
         # WHERE email = (email);
         statement = db.select(User).filter_by(email=email)
         user = db.session.scalar(statement)
-        
+
         # Check if the user exists
         if not user:
-            return {"error":"the email does NOT exit!"}, 404
+            return {"error": "the email does NOT exit!"}, 404
     else:
         # Return error if email is missing
         return {"error": "Email is required."}, 400
@@ -119,24 +139,32 @@ def login():
         if bcrypt.check_password_hash(user.password, password):
             # Generate a JWT token for the authenticated user
             token = create_access_token(
-                identity=str(user.user_id),         # The identity of the token (the user ID in string format)
+                # The identity of the token (the user ID in string format)
+                identity=str(user.user_id),
                 expires_delta=timedelta(days=3))    # The token will expire after 3 days
-             
-             # Return the success response with user info and token
+
+            # Return the success response with user info and token
             return {"ACCESS GRANTED": {"email": user.email, "is_admin": user.is_admin, "token": token}}
         else:
             # Respond back with an error message if the passeord is invalid
             return {"error": "Invalid password"}, 401   # 401 Unauthorized
     else:
-        return {"error":"Password is required"}, 400
-    
+        return {"error": "Password is required"}, 400
+
 
 @auth_bp.route("/users", methods=["PUT", "PATCH"])
 @jwt_required()     # Ensure the user is authenticated
 def update_user():
     """
     Allows authenticated users to update their information.
-    It ensures that users can only update their own records.
+    Ensures that users can only update their own records.
+
+    Returns:
+        JSON response indicating success or failure of the update.
+    Raises:
+        404: If the user does not exist.
+        400: If there are validation errors.
+        409: If the email is already registered.
     """
 
     # Load and validate the incoming JSON data
@@ -147,8 +175,8 @@ def update_user():
 
     # Create a SQL statement to select the user by user_id
 
-    # SELECT * 
-    # FROM User 
+    # SELECT *
+    # FROM User
     # WHERE user_id = (user_id);
     statement = db.select(User).filter_by(user_id=user_id)
     user = db.session.scalar(statement)
@@ -161,7 +189,8 @@ def update_user():
 
             # If a new password is provided, hash it before saving
             if password:
-                user.password = bcrypt.generate_password_hash(password).decode("utf-8")
+                user.password = bcrypt.generate_password_hash(
+                    password).decode("utf-8")
 
             # Commit changes to the database
             db.session.commit()
@@ -172,30 +201,37 @@ def update_user():
                 return {"error": f"The column {err.orig.diag.column_name} is required"}, 400
             if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
                 # Handle unique constraint violations
-                return {"error": "Email is already registered in the database. Please enter another email."}, 409 
-        
+                return {"error": "Email is already registered in the database. Please enter another email."}, 409
+
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
     else:
         # Return an error if the user does not exist
-        return {"error":f"User {user_id} does NOT exist"}, 404
-    
+        return {"error": f"User {user_id} does NOT exist"}, 404
+
 
 @auth_bp.route("/", methods=["DELETE"])
 @jwt_required()         # Ensure the user is authenticated
 def delete_user():
     """
-    this function securely deletes the current user
-    only if its accounts have balance=0
+    Securely deletes the current user only if their accounts have a balance of zero.
+
+    Returns:
+        JSON response indicating the success or failure of the user deletion.
+    Raises:
+        400: If there is an active balance in the user's accounts.
+        404: If the user does not exist.
     """
+
+    # get authenticated user id
     user_id = get_jwt_identity()
 
     # Create a SQL statement to check for accounts with a positive balance
 
-    # SELECT * 
-    # FROM accounts 
-    # WHERE user_id = (user_id) 
+    # SELECT *
+    # FROM accounts
+    # WHERE user_id = (user_id)
     # AND balance > 0;
     statement = db.select(Account).filter(
         Account.user_id == user_id,
@@ -209,12 +245,12 @@ def delete_user():
             # Create a dictionary for each account
             accounts_details.append(account)
         return {"error": "User cannot be deleted because have accounts liked with a positive balance.",
-                    "accounts": accounts_schema.dump(accounts_details)}, 400
+                "accounts": accounts_schema.dump(accounts_details)}, 400
     else:
         # Create a SQL statement to select the user by user_id
 
-        # SELECT * 
-        # FROM users 
+        # SELECT *
+        # FROM users
         # WHERE user_id = (user_id);
 
         statement = db.select(User).filter_by(user_id=user_id)
@@ -224,7 +260,7 @@ def delete_user():
             db.session.delete(user)
             # Commit changes to the session
             db.session.commit()
-            return {"success":f"The user {user_id} has been succesfully DELETED"}
+            return {"success": f"The user {user_id} has been succesfully DELETED"}
         except SQLAlchemyError as e:
             # Roll back the session on error
             db.session.rollback()

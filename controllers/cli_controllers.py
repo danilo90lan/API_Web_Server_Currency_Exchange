@@ -22,7 +22,7 @@ def create_tables():
     """
 
     # Create all tables as defined by SQLAlchemy models
-    db.create_all()     
+    db.create_all()
     print("Tables created")
     # Initialize currency table by seeding data from an external API
     seed_currency_table()
@@ -38,17 +38,18 @@ def drop_tables():
     # Connect to the application context to interact with the database
     with current_app.app_context():
         # Reflect the current database structure
-        db.reflect()  
+        db.reflect()
         # This will drop all tables
-        db.drop_all()  
+        db.drop_all()
         print("All tables dropped successfully")
+
 
 @db_commands.cli.command("seed")
 def seed_database():
     """
     This command seeds the database with initial data for users, accounts, and deposits.
     """
-    
+
     users = [
         User(
             name="Danilo",
@@ -71,107 +72,111 @@ def seed_database():
         ),
 
         User(
-             name="Sam",
-             email="sam@gmail.com",
-             password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8')
+            name="Sam",
+            email="sam@gmail.com",
+            password=bcrypt.generate_password_hash("ABCDabcd1").decode('utf8')
         )
     ]
-    
+
     accounts = [
         Account(
-            account_name = "savings",
-            currency_code = "AUD",
-            balance = 2000,
-            user = users[0]     # Account is linked to user Danilo
+            account_name="savings",
+            currency_code="AUD",
+            balance=2000,
+            user=users[0]     # Account is linked to user Danilo
         ),
         Account(
-            account_name = "travel",
-            currency_code = "EUR",
-            balance = 3500,
-            user = users[0]
+            account_name="travel",
+            currency_code="EUR",
+            balance=3500,
+            user=users[0]
         ),
         Account(
-            account_name = "travel",
-            currency_code = "CZK",
-            balance = 500,
-            user = users[0]
+            account_name="travel",
+            currency_code="CZK",
+            balance=500,
+            user=users[0]
         ),
         Account(
-            account_name = "car",
-            currency_code = "USD",
-            balance = 597,
-            user = users[1]     # Account is linked to user Alberto
+            account_name="car",
+            currency_code="USD",
+            balance=597,
+            user=users[1]     # Account is linked to user Alberto
         ),
         Account(
-            account_name = "travel",
-            currency_code = "JMD",
-            balance = 2000,
-            user = users[1]
+            account_name="travel",
+            currency_code="JMD",
+            balance=2000,
+            user=users[1]
         ),
         Account(
-            account_name = "europe-trip",
-            currency_code = "EUR",
-            balance = 1000,
-            user = users[3]     # Account is linked to user Sam
+            account_name="europe-trip",
+            currency_code="EUR",
+            balance=1000,
+            user=users[3]     # Account is linked to user Sam
         ),
         Account(
-            account_name = "savings",
-            currency_code = "CAD",
-            balance = 3500,
-            user = users[2]     # Account is linked to user Marco
+            account_name="savings",
+            currency_code="CAD",
+            balance=3500,
+            user=users[2]     # Account is linked to user Marco
         ),
         Account(
-            account_name = "savings",
-            currency_code = "USD",
-            balance = 300,
-            user = users[3]
+            account_name="savings",
+            currency_code="USD",
+            balance=300,
+            user=users[3]
         ),
         Account(
-            account_name = "savings",
-            currency_code = "AUD",
-            balance = 2811,
-            user = users[3]
+            account_name="savings",
+            currency_code="AUD",
+            balance=2811,
+            user=users[3]
         )
     ]
 
     deposits = [
         Deposit(
-            amount = 200,
-            account = accounts[1]       # Deposit linked to account with currency_code EUR
+            amount=200,
+            # Deposit linked to account with currency_code EUR
+            account=accounts[1]
         ),
         Deposit(
-            amount = 1050,
-            description = "car",
-            account = accounts[2]       # Deposit linked to account with currency_code CZK
+            amount=1050,
+            description="car",
+            # Deposit linked to account with currency_code CZK
+            account=accounts[2]
         ),
         Deposit(
-            amount = 3400,
-            description = "Savings",
-            account = accounts[0]       # Deposit linked to account with currency_code AUD
+            amount=3400,
+            description="Savings",
+            # Deposit linked to account with currency_code AUD
+            account=accounts[0]
         ),
         Deposit(
-            amount = 300,
-            description = "savings",
-            account = accounts[5]       # Deposit linked to account with currency_code EUR
+            amount=300,
+            description="savings",
+            # Deposit linked to account with currency_code EUR
+            account=accounts[5]
         ),
         Deposit(
-            amount = 180,
-            account = accounts[3]       # Deposit linked to account with currency_code USD
+            amount=180,
+            # Deposit linked to account with currency_code USD
+            account=accounts[3]
         ),
         Deposit(
-            amount = 100,
-            description = "paycheck",
-            account = accounts[3]       # Another deposit for the USD account
+            amount=100,
+            description="paycheck",
+            account=accounts[3]       # Another deposit for the USD account
         )
     ]
-
 
     db.session.add_all(deposits)
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)
     print("Accounts added succesfully")
-    
+
     try:
         db.session.commit()
         print("Tables seeded!")

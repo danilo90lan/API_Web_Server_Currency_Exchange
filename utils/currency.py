@@ -9,8 +9,16 @@ from sqlalchemy.exc import SQLAlchemyError
 
 def get_currencies():
     """
-    retrieve currency data from an external API
+    Retrieve currency data from an external API.
+
+    Returns:
+        dict: The JSON response containing currency data.
+
+    Raises:
+        500: If an HTTP error occurs during the request.
+        408: If the request times out.
     """
+
     endpoint = "https://openexchangerates.org/api/latest.json?app_id=71562a44ff3d4ad98578bb6d44ef9a9b"
     try:
         # Make a GET request to the API endpoint
@@ -24,16 +32,22 @@ def get_currencies():
         return f"HTTP error occurred: {http_err}", 500
     except Timeout:
         # Handle request timeouts
-        return "The request timed out", 408         # 408 is the HTTP status code for Request Timeout
+        # 408 is the HTTP status code for Request Timeout
+        return "The request timed out", 408
     except RequestException as req_err:
         # Handle other request-related exceptions
         return f"Request failed: {req_err}", 500
-    
+
 
 def seed_currency_table():
     """
-    this function effectively seeds the currency data into the 
-    database by retrieving it from an external API
+    Seed the currency data into the database by retrieving it from an external API.
+
+    Returns:
+        dict: A success message or an error message in case of failure.
+
+    Raises:
+        500: If a database operation fails.
     """
 
     list_currency = []
@@ -41,7 +55,7 @@ def seed_currency_table():
     # Fetch currency data from the external API
     currency = get_currencies()
 
-    # Create Currency objects retrieving the rates and the currency_code 
+    # Create Currency objects retrieving the rates and the currency_code
     # from the third-party API response (JSON object) and append it to list_currency
     for code, rate in currency["rates"].items():
         currency_obj = Currency(
@@ -65,9 +79,17 @@ def seed_currency_table():
 
 def update_exchange_rates(app):
     """
-    This function is used to periodically update exchange rates 
-    in the database with new values fetched from the API.
-    It's called by the apscheduler in background
+    Periodically update exchange rates in the database with new values fetched from the API.
+    This function is called by the APScheduler in the background.
+
+    Args:
+        app: The Flask application context.
+
+    Returns:
+        dict: A success message or an error message in case of failure.
+
+    Raises:
+        500: If a database operation fails.
     """
 
     # Create an application context so the function can access Flask resources like the database
@@ -78,7 +100,7 @@ def update_exchange_rates(app):
         try:
             # Loop through the currency data and update the corresponding rows
             for code, rate in currency["rates"].items():
-                
+
                 # Update only the existing records
                 # UPDATE Currency
                 # SET rate = (new_rate), last_update = (datetime.now()
@@ -98,10 +120,13 @@ def update_exchange_rates(app):
 
 def get_currencies_codes():
     """
-    Iterate throught currency JSON object obtained from the third party API
-    and return a list of all the currency codes stored in a tuple.
-    It's going to be used for validation purposes, in order to create a new account 
-    and select the currency to associate to.
+    Retrieve currency codes from the currency JSON object obtained from the third-party API.
+
+    Returns:
+        tuple: A tuple containing all the currency codes.
+
+    Raises:
+        500: If there is an error retrieving currency data.
     """
 
     currency = get_currencies()

@@ -37,10 +37,15 @@ account_bp.register_blueprint(deposit_bp)
 @jwt_required()     # Ensure the user is authenticated
 def count_accounts_grouped_by_currency():
     """
-    This function retrieves and counts all accounts, 
-    providing the counts grouped by currency_code, 
+    Retrieves and counts all accounts, providing the counts grouped by currency_code, 
     but only if the requester has admin privileges.
+
+    Returns:
+        JSON response containing the count of accounts grouped by currency.
+    Raises:
+        Forbidden: If the user does not have admin privileges.
     """
+
     # Check if the user is an admin
     if authorize_as_admin():
 
@@ -77,13 +82,17 @@ def count_accounts_grouped_by_currency():
 @account_bp.route("/")
 @jwt_required()         # Ensure the user is authenticated
 def get_accounts():
-    """retrieves and returns all accounts associated with the authenticated user
+    """
+    Retrieves and returns all accounts associated with the authenticated user.
+
+    Returns:
+        JSON response containing all accounts for the authenticated user.
     """
 
     # Query to get all accounts for the authenticated user
 
-    # SELECT * 
-    # FROM Account 
+    # SELECT *
+    # FROM Account
     # WHERE user_id = (user_id);
     statement = db.select(Account).filter_by(user_id=get_jwt_identity())
     accounts = db.session.scalars(statement)
@@ -95,16 +104,23 @@ def get_accounts():
 @jwt_required()         # Ensure the user is authenticated
 @check_account_user     # Verify the account belongs to the current user
 def get_account(account_id):
-    """retrieves and returns the details of a specific account identified by the parameter account_id,
-        but only if the authenticated user is authorized to access that specific account. 
-        @check_account_user is a decorator that checks whether the account_id 
-        parameter belongs to the current user
+    """
+    Retrieves and returns the details of a specific account identified by the parameter account_id,
+    but only if the authenticated user is authorized to access that specific account. 
+
+    Parameters:
+        account_id (int): The ID of the account to retrieve.
+
+    Returns:
+        JSON response containing the details of the specified account.
+    Raises:
+        404: If the account is not found.
     """
 
     # Query to get the specific account by account_id
 
-    # SELECT * 
-    # FROM Account 
+    # SELECT *
+    # FROM Account
     # WHERE account_id = (account_id);
     statement = db.select(Account).filter_by(account_id=account_id)
     account = db.session.scalar(statement)
@@ -116,33 +132,40 @@ def get_account(account_id):
 @jwt_required()         # Ensure the user is authenticated
 def create_account():
     """
-    creates a new account for the authenticated user based on the data provided 
-    in the request body. It ensures that any required fields are provided and returns the responses
+    Creates a new account for the authenticated user based on the data provided 
+    in the request body. It ensures that any required fields are provided and returns the responses.
+
+    Returns:
+        JSON response indicating the success or failure of the account creation.
+    Raises:
+        IntegrityError: If required fields are missing or if there are database integrity issues.
     """
-     
+
     # Load and validate the incoming JSON data
     body = account_schema.load(request.get_json())
 
     try:
         # Create a new Account object
         account = Account(
-            account_name = body.get("account_name").capitalize(),   # Capitalize the account name
-            balance = body.get("balance"),
-            currency_code = body.get("currency_code"),
-            user_id = int(get_jwt_identity())               # Get the user ID from the JWT token
+            # Capitalize the account name
+            account_name=body.get("account_name").capitalize(),
+            balance=body.get("balance"),
+            currency_code=body.get("currency_code"),
+            # Get the user ID from the JWT token
+            user_id=int(get_jwt_identity())
         )
         # Add the new account to the database session
         db.session.add(account)
-        
+
         try:
             # Commit the transactio to the session
             db.session.commit()
-            return jsonify({"SUCCESS":account_schema.dump(account)}), 201
+            return jsonify({"SUCCESS": account_schema.dump(account)}), 201
         except SQLAlchemyError as e:
-                # Rollback the session if there's a database error
-                db.session.rollback()
-                # Return an error response for the database operation failure
-                return {"error": f"Database operation failed {e}"}, 500
+            # Rollback the session if there's a database error
+            db.session.rollback()
+            # Return an error response for the database operation failure
+            return {"error": f"Database operation failed {e}"}, 500
     except IntegrityError as err:
         # Handle integrity errors, such as NOT NULL violations
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
@@ -156,14 +179,22 @@ def create_account():
 @check_account_user     # Verify the account belongs to the current user
 def update_account(account_id):
     """
-     this function allows for the partial updating of a specified account details 
-     while ensuring that the user has permission to make changes
+    Allows for the partial updating of specified account details 
+    while ensuring that the user has permission to make changes.
+
+    Parameters:
+        account_id (int): The ID of the account to update.
+
+    Returns:
+        JSON response indicating the success or failure of the account update.
+    Raises:
+        404: If the account does not exist.
     """
-    
+
     # Query to get the specific account by account_id
 
-    # SELECT * 
-    # FROM Account 
+    # SELECT *
+    # FROM Account
     # WHERE account_id = (account_id);
     statement = db.select(Account).filter_by(account_id=account_id)
     account = db.session.scalar(statement)
@@ -192,17 +223,25 @@ def update_account(account_id):
 @check_account_user     # Verify the account belongs to the current user
 def delete_Account(account_id):
     """
-    this function securely deletes a specified account only if the balance = 0
+    Securely deletes a specified account only if the balance is zero.
+
+    Parameters:
+        account_id (int): The ID of the account to delete.
+
+    Returns:
+        JSON response indicating the success or failure of the account deletion.
+    Raises:
+        400: If there is an active balance in the account.
     """
 
     # Query to get the specific account by account_id
 
-    # SELECT * 
-    # FROM Account 
+    # SELECT *
+    # FROM Account
     # WHERE account_id = (account_id);
     statement = db.select(Account).filter_by(account_id=account_id)
     account = db.session.scalar(statement)
-    
+
     # Check if the account balance is zero
     if account.balance == 0:
         # Delete the account from the session
@@ -210,11 +249,11 @@ def delete_Account(account_id):
         try:
             # commit to the session
             db.session.commit()
-            return {"success":f"The account {account_id} has been succesfully DELETED"}
+            return {"success": f"The account {account_id} has been succesfully DELETED"}
         except SQLAlchemyError as e:
             # Rollback if there's a database error
             db.session.rollback()
             return {"error": f"Database operation failed {e}"}, 500
 
     else:
-            return {"error":f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}, 400
+        return {"error": f"There is ACTIVE balance in the account {account_id}. Please transfer the remaining balance before closing the account!"}, 400
