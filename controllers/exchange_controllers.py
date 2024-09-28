@@ -55,7 +55,7 @@ def get_exchanges(account_id):
             # Return the exchanges in JSON format
             return jsonify(exchanges_schema.dump(exchanges))
         else:
-            return {"message": f"There is NO exchanges operations history for the account {account_id}"}, 404
+            return {"message": f"There is NO exchanges operations history for the account {account_id}"}
     except SQLAlchemyError as e:
         return {"error": f"Database operation failed: {e}"}, 500
 

@@ -47,7 +47,7 @@ def get_deposits(account_id):
         if deposits:
             return jsonify(deposits_schema.dump(deposits))
         else:
-            return {"message": f"There is NO deposit history for the account {account_id}"}, 404
+            return {"message": f"There is NO deposit history for the account {account_id}"}
 
     except SQLAlchemyError as e:
         return {"error": f"Database operation failed: {e}"}, 500
