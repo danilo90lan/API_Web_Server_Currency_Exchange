@@ -3,7 +3,8 @@ from init import db, ma
 from marshmallow import fields  # For defining schema fields
 # For field validation (regular expressions, ranges)
 from marshmallow.validate import Regexp, Range
-from sqlalchemy import func  # For SQL functions such as 'now' to generate timestamps
+# For SQL functions such as 'now' to generate timestamps
+from sqlalchemy import func  
 
 
 class Exchange(db.Model):

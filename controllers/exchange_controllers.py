@@ -88,7 +88,6 @@ def currency_exchange(account_id, destination_id):
         return {"error": "Cannot transfer funds to the same account. Please select a different account."}, 400
 
     # Load the request body and extract the amount
-    # the amount has been already validated (amount > 0)
     body = exchange_schema.load(request.get_json())
     # Get the transfer amount from the request body
     amount = body.get("amount")
@@ -156,12 +155,11 @@ def currency_exchange(account_id, destination_id):
 
         # Create a new instance of Exchange
         new_exchange = Exchange(
-            amount=body.get("amount"),  # Original amount transferred
-            # Amount after conversion (if applicable)
-            amount_exchanged=amount_exchanged,
-            description=body.get("description"),  # Description of the exchange
-            account_origin=account_from,  # Reference to the source account
-            account_destination=account_to  # Reference to the destination account
+            amount=body.get("amount"),              # Original amount transferred
+            amount_exchanged=amount_exchanged,      # Amount after conversion 
+            description=body.get("description"),    # Description of the exchange
+            account_origin=account_from,            # Reference to the source account
+            account_destination=account_to          # Reference to the destination account
         )
 
         # Add the new exchange record to the session

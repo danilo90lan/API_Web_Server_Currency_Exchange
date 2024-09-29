@@ -9,6 +9,7 @@ from models.currency import Currency
 from utils.currency import seed_currency_table
 
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func 
 
 # Define a Blueprint for database management commands
 db_commands = Blueprint("db", __name__)
@@ -171,7 +172,47 @@ def seed_database():
         )
     ]
 
+
+    # the amount_exchanged is just a placeholder used to seed the table.
+    exchanges = [
+        Exchange(
+            amount = 1000,
+            amount_exchanged = 1700,
+            description = "Euro trip savings",
+            account_origin = accounts[5],
+            account_destination = accounts[1],
+            date_time = func.now()
+        ),
+        Exchange(
+            amount = 200,
+            amount_exchanged = 125,
+            description = "loan",
+            account_origin = accounts[0],
+            account_destination = accounts[1],
+            date_time = func.now()
+        ),
+        Exchange(
+            amount = 67,
+            amount_exchanged = 100,
+            description = "savings",
+            account_origin = accounts[2],
+            account_destination = accounts[1],
+            date_time = func.now()
+        ),
+        Exchange(
+            amount = 3000,
+            amount_exchanged = 4000,
+            description = "travel",
+            account_origin = accounts[3],
+            account_destination = accounts[4],
+            date_time = func.now()
+        )
+    ]
+
     db.session.add_all(deposits)
+    print("Deposits records added succesfully")
+    db.session.add_all(exchanges)
+    print("Exchanges records added succesfully")
     db.session.add_all(users)
     print("Users added succesfully")
     db.session.add_all(accounts)

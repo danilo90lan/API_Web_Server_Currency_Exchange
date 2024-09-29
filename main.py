@@ -60,7 +60,7 @@ def create_app():
     # This scheduler will continuously run the update_exchange_rates() function every 60 minutes to keep exchange rates updated.
 
     scheduler = BackgroundScheduler()
-    # Schedule the `update_exchange_rates` function to run every 60 minutes
+    # Schedule the update_exchange_rates() function to run every 60 minutes
     # The `args=[app]` ensures the function receives the `app` instance as an argument
     scheduler.add_job(func=update_exchange_rates,
                       trigger="interval", minutes=60, args=[app])
