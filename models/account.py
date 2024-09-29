@@ -1,11 +1,9 @@
 # db is the SQLAlchemy database instance, ma is the Marshmallow instance for serialization and validation
 from init import db, ma
 # Fields for Marshmallow schemas and validation methods
-from marshmallow import fields, validates
+from marshmallow import fields, validates, ValidationError
 # Validators for Marshmallow
 from marshmallow.validate import OneOf, And, Regexp, Range
-# Handling validation exceptions
-from marshmallow.exceptions import ValidationError
 
 # Used to get SQL functions like the current timestamp (now())
 from sqlalchemy import func
@@ -76,6 +74,7 @@ class AccountSchema(ma.Schema):
     balance = fields.Float(validate=Range(
         min=0, error="Balance cannot be negative."))
 
+    # currency code validation
     @validates("currency_code")
     def validates_currency_code(self, currency_code):
         """
@@ -103,6 +102,16 @@ class AccountSchema(ma.Schema):
         if existing_account:
             raise ValidationError(
                 f"An account with the currency {currency_code} already exists for the user {user_id}")
+        
+    # sanitization for the name field
+    # by validating that they contain only ASCII characters.
+    # The isascii() method checks whether all characters in the string are ASCII characters
+
+    @validates("account_name")
+    def validate_name(self, value):
+        if not value.isascii():
+            raise ValidationError("Name must contain only ASCII characters.")
+        return value
 
     class Meta:
         # Fields that will be included when serializing data

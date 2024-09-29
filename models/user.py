@@ -1,6 +1,7 @@
 # db: SQLAlchemy instance, ma: Marshmallow instance for schema validation
 from init import db, ma
-from marshmallow import fields  # For defining schema fields in Marshmallow schemas
+# For defining schema fields in Marshmallow schemas
+from marshmallow import fields, validates, ValidationError  
 # For field validation (regular expressions, ranges, EMAIL)
 from marshmallow.validate import Length, And, Regexp, Email
 
@@ -59,6 +60,28 @@ class UserSchema(ma.Schema):
         required=True,
         validate=Email(error="Invalid email address format.")
     )
+
+    # sanitization for the name, password, and email fields 
+    # by validating that they contain only ASCII characters.
+    # The isascii() method checks whether all characters in the string are ASCII characters
+
+    @validates("name")
+    def validate_name(self, value):
+        if not value.isascii():
+            raise ValidationError("Name must contain only ASCII characters.")
+        return value
+
+    @validates("password")
+    def validate_password(self, value):
+        if not value.isascii():
+            raise ValidationError("Password must contain only ASCII characters.")
+        return value
+
+    @validates("email")
+    def validate_email(self, value):
+        if not value.isascii():
+            raise ValidationError("Email must contain only ASCII characters.")
+        return value
 
     class Meta:
         fields = ("user_id", "name", "email",

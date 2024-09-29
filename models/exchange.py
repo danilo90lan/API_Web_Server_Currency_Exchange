@@ -1,6 +1,6 @@
 # db: SQLAlchemy instance, ma: Marshmallow instance for schema validation
 from init import db, ma
-from marshmallow import fields  # For defining schema fields
+from marshmallow import fields, validates, ValidationError 
 # For field validation (regular expressions, ranges)
 from marshmallow.validate import Regexp, Range
 # For SQL functions such as 'now' to generate timestamps
@@ -60,6 +60,16 @@ class ExchangeSchema(ma.Schema):
     # Validates the description to ensure it's between 4 and 100 characters, containing only alphanumeric characters and spaces
     description = fields.String(validate=Regexp("^[A-Za-z0-9 ]{4,100}$",
                                                 error="Description must be between 4 and 100 characters, and contain only alphanumeric characters and spaces."))
+
+    # sanitization for the description field 
+    # by validating that they contain only ASCII characters
+    # The isascii() method checks whether all characters in the string are ASCII characters
+
+    @validates("description")
+    def validate_description(self, value):
+        # Check if the description is ASCII
+        if not value.isascii():
+            raise ValidationError("Description must contain only ASCII characters.")
 
     class Meta:
         fields = ("exchange_id", "amount", "account_origin",

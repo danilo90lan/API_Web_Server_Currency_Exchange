@@ -74,8 +74,9 @@ def register_user():
         # Create an instance of the User Model
         user = User(
             # Capitalize the user's name for consistency
-            name=body.get("name").capitalize(),
-            email=body.get("email"),                  # Set the user's email
+            name=body.get("name").strip().capitalize(),
+            # Convert email address to lowercase to ensure case-insensitivity when comparing email addresses.
+            email=body.get("email").strip().lower(),                  
             # Hash the password securely with bcrypt and decode it to a UTF-8 string
             password=bcrypt.generate_password_hash(password).decode("utf-8")
         )
@@ -114,7 +115,8 @@ def login():
     """
 
     body = request.get_json()
-    email = body.get("email")
+    # Convert email address to lowercase to ensure case-insensitivity when comparing email addresses.
+    email = body.get("email").strip().lower()
 
     # check if the email exist
     if email:
@@ -184,8 +186,8 @@ def update_user():
     if user:
         try:
             # Update the user's fields with provided data, keeping existing values if not provided
-            user.name = body.get("name") or user.name
-            user.email = body.get("email") or user.email
+            user.name = body.get("name", "").strip().capitalize() or user.name  #providing a default value to get() in case is None ("")
+            user.email = body.get("email", "").strip().lower() or user.email    #providing a default value to get() in case is None ("")
 
             # If a new password is provided, hash it before saving
             if password:

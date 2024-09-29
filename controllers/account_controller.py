@@ -148,7 +148,7 @@ def create_account():
         # Create a new Account object
         account = Account(
             # Capitalize the account name
-            account_name=body.get("account_name").capitalize(),
+            account_name=body.get("account_name").strip().capitalize(),
             balance=body.get("balance"),
             currency_code=body.get("currency_code"),
             # Get the user ID from the JWT token
@@ -204,7 +204,7 @@ def update_account(account_id):
         # Load and validate the incoming JSON data for partial updates
         body = account_schema.load(request.get_json(), partial=True)
         # Update account fields with new values, keeping existing ones if not provided
-        account.account_name = body.get("account_name") or account.account_name
+        account.account_name = body.get("account_name", "").strip().capitalize() or account.account_name    #providing a default value to get() in case is None ("")
         try:
             # Commit the changes
             db.session.commit()
